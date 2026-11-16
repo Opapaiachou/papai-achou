@@ -51,7 +51,7 @@ A vitrine é o site que fica na pasta `docs`. O robô atualiza o arquivo `docs/o
 
 1. No repositório: **Settings › Pages**.
 2. Em **Build and deployment**, escolha **Deploy from a branch**, branch `main` e pasta `/docs`. Clique em **Save**.
-3. Em 1 ou 2 minutos aparece o endereço do site, algo como `https://SEU-USUARIO.github.io/papai-achou/`. Esse é o link para a bio do Instagram e do TikTok.
+3. Em 1 ou 2 minutos aparece o endereço do site, algo como `https://SEU-USUARIO.github.io/papai-achou/`. Com o domínio próprio, o endereço oficial é `https://opapaiachou.com.br` — esse é o link para as bios.
 4. Abra `docs/config.js` (ícone de lápis) e troque os `"#"` pelos links do Canal do WhatsApp, do Telegram, do Instagram e do TikTok.
 
 **Ofertas do Mercado Livre e da Amazon (manuais):** abra `docs/manuais.csv` e acrescente uma linha por oferta, neste formato:
@@ -61,7 +61,7 @@ data,categoria,loja,nome,preco,preco_antigo,link,foto
 2026-11-20,Presentes,Mercado Livre,"Kit Churrasco Inox 10 Peças",89.90,149.90,https://link-de-afiliado,https://link-da-foto
 ```
 
-- `categoria`: Casa e cozinha, Escola, Crianças, Tecnologia útil ou Presentes.
+- `categoria`: Casa e cozinha, Escola, Crianças, Moda, Maquiagem e beleza, Tecnologia útil ou Presentes.
 - `loja`: Mercado Livre ou Amazon.
 - Preço com ponto, sem R$. Nome entre aspas se tiver vírgula. A foto é opcional.
 
