@@ -61,7 +61,7 @@ data,categoria,loja,nome,preco,preco_antigo,link,foto
 2026-11-20,Presentes,Mercado Livre,"Kit Churrasco Inox 10 Peças",89.90,149.90,https://link-de-afiliado,https://link-da-foto
 ```
 
-- `categoria`: Casa e cozinha, Escola, Crianças, Moda, Maquiagem e beleza, Tecnologia útil ou Presentes.
+- `categoria`: Fitness, Casa e cozinha, Escola, Crianças, Moda, Maquiagem e beleza, Tecnologia útil ou Presentes.
 - `loja`: Mercado Livre ou Amazon.
 - Preço com ponto, sem R$. Nome entre aspas se tiver vírgula. A foto é opcional.
 
