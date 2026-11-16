@@ -2,7 +2,7 @@
 
 import math
 
-from robo import config, historico
+from robo import config, historico, regras
 
 
 def _num(valor, padrao=0.0):
@@ -42,6 +42,9 @@ def normalizar(no):
 
 
 def motivo_reprovacao(oferta):
+    bloqueio = regras.motivo_bloqueio(oferta["nome"])
+    if bloqueio:
+        return bloqueio
     if oferta["nota"] < config.NOTA_MINIMA:
         return "nota baixa"
     if oferta["vendas"] < config.VENDAS_MINIMAS:
