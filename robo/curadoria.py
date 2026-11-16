@@ -58,19 +58,33 @@ def motivo_reprovacao(oferta):
 
 
 def pontuar(oferta):
-    """Nota de 0 a ~100: desconto pesa mais, depois avaliação, vendas e comissão."""
+    """Nota de 0 a ~100: vendas e desconto pesam mais, depois avaliação e comissão."""
     return round(
         oferta["desconto"] * 0.8
         + (oferta["nota"] - 4.0) * 20
-        + math.log10(max(oferta["vendas"], 1)) * 5
+        + math.log10(max(oferta["vendas"], 1)) * 8
         + oferta["comissao_taxa"] * 100 * 0.5
         + (5 if oferta["loja_oficial"] else 0),
         1,
     )
 
 
+def misturar_categorias(ofertas):
+    """Intercala as categorias (a melhor de cada, depois a segunda de cada...) para a vitrine não ficar só com um nicho."""
+    por_categoria = {}
+    for oferta in ofertas:
+        por_categoria.setdefault(oferta["categoria"], []).append(oferta)
+    filas = list(por_categoria.values())
+    mistura = []
+    while any(filas):
+        for fila in filas:
+            if fila:
+                mistura.append(fila.pop(0))
+    return mistura
+
+
 def escolher(nos, hist):
-    """Recebe os produtos crus da Shopee e devolve as melhores ofertas, já registrando os preços."""
+    """Recebe os produtos crus da Shopee e devolve todas as ofertas aprovadas, da melhor para a pior, já registrando os preços."""
     vistos = {}
     for no in nos:
         oferta = normalizar(no)
@@ -94,4 +108,4 @@ def escolher(nos, hist):
         aprovadas.append(oferta)
 
     aprovadas.sort(key=lambda o: o["pontos"], reverse=True)
-    return aprovadas[: config.OFERTAS_POR_RODADA]
+    return aprovadas
