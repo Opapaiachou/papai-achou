@@ -1,5 +1,5 @@
 (function () {
-  var CATEGORIAS = ["Todos", "Casa e cozinha", "Escola", "Crianças", "Moda", "Maquiagem e beleza", "Tecnologia útil", "Presentes"];
+  var CATEGORIAS = ["Todos", "Fitness", "Casa e cozinha", "Escola", "Crianças", "Moda", "Maquiagem e beleza", "Tecnologia útil", "Presentes"];
   var pagina = document.body.getAttribute("data-pagina");
   var cfg = window.PAPAI_ACHOU || {};
   var estado = { ofertas: [], categoria: "Todos", busca: "" };
