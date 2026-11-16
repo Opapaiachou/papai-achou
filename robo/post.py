@@ -3,6 +3,8 @@
 import html
 import re
 
+from robo import regras
+
 
 def _moeda(valor):
     texto = f"{valor:,.2f}"
@@ -11,6 +13,7 @@ def _moeda(valor):
 
 def _limpar_nome(nome, limite=90):
     nome = re.sub(r"[【\[].*?[】\]]", "", nome)  # tira [PROMO], 【Pronta entrega】 etc.
+    nome = regras.tirar_exageros(nome)  # tira "resultado garantido", "termogênico" etc.
     nome = re.sub(r"\s+", " ", nome).strip(" -|")
     return nome if len(nome) <= limite else nome[: limite - 1].rstrip() + "…"
 
@@ -26,7 +29,10 @@ def texto_canal(oferta):
     nota = f"{oferta['nota']:.1f}".replace(".", ",")
     vendas = f"{oferta['vendas']:,}".replace(",", ".")
     linhas.append(f"⭐ {nota} | {vendas} vendidos | {oferta['loja']}")
-    linhas += ["", f"👉 {oferta['link']}", "", "⚠️ Preço pode mudar a qualquer momento"]
+    linhas += ["", f"👉 {oferta['link']}", ""]
+    if regras.eh_suplemento(oferta["nome"]):
+        linhas.append(regras.AVISO_SUPLEMENTO)
+    linhas += ["⚠️ Preço pode mudar a qualquer momento", regras.AVISO_AFILIADO]
     return "\n".join(linhas)
 
 
