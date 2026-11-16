@@ -46,8 +46,10 @@ def coletar_exemplo():
 def rodada(demo=False):
     hist = {} if demo else historico.carregar()
     nos = coletar_exemplo() if demo else coletar_reais()
-    escolhidas = curadoria.escolher(nos, hist)
-    print(f"{len(nos)} produtos analisados, {len(escolhidas)} ofertas escolhidas.")
+    aprovadas = curadoria.escolher(nos, hist)
+    escolhidas = curadoria.misturar_categorias(aprovadas)[: config.OFERTAS_POR_RODADA]
+    da_vitrine = curadoria.misturar_categorias(aprovadas)[: config.VITRINE_POR_RODADA]
+    print(f"{len(nos)} produtos analisados, {len(aprovadas)} aprovados, {len(escolhidas)} para o Telegram, {len(da_vitrine)} para a vitrine.")
 
     if demo:
         for i, oferta in enumerate(escolhidas, 1):
@@ -62,7 +64,7 @@ def rodada(demo=False):
         telegram.enviar_oferta(token, chat_id, oferta["foto"], post.legenda_aprovacao(oferta, i, len(escolhidas)))
         historico.marcar_enviado(hist, oferta["chave"])
     historico.salvar(hist)
-    vitrine.atualizar(escolhidas)
+    vitrine.atualizar(da_vitrine)
     return escolhidas
 
 
