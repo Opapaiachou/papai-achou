@@ -85,6 +85,8 @@ def rodada(demo=False, teste=False):
 def mostrar_chat_id():
     token = _variavel("TELEGRAM_TOKEN")
     dados = requests.get(f"https://api.telegram.org/bot{token}/getUpdates", timeout=30).json()
+    if not dados.get("ok"):
+        sys.exit(f"O Telegram recusou o token ({dados.get('description')}). Confira o segredo TELEGRAM_TOKEN.")
     chats = {u["message"]["chat"]["id"]: u["message"]["chat"].get("first_name", "") for u in dados.get("result", []) if "message" in u}
     if not chats:
         print("Nenhuma mensagem encontrada. Abra o seu robô no Telegram, mande /start e rode de novo.")
