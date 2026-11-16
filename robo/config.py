@@ -17,11 +17,21 @@ PALAVRAS_CHAVE = {
     "halteres": "Fitness",
     "tapete yoga": "Fitness",
     "corda de pular": "Fitness",
+    "whey protein": "Fitness",
+    "creatina": "Fitness",
+    "pre treino": "Fitness",
+    "pasta de amendoim": "Fitness",
+    "barra de proteina": "Fitness",
+    "luva academia": "Fitness",
     "organizador casa": "Casa e cozinha",
     "utensilios cozinha": "Casa e cozinha",
     "potes hermeticos": "Casa e cozinha",
     "kit limpeza casa": "Casa e cozinha",
     "garrafa termica": "Casa e cozinha",
+    "organizador geladeira": "Casa e cozinha",
+    "acessorios air fryer": "Casa e cozinha",
+    "mop giratorio": "Casa e cozinha",
+    "jogo de cama": "Casa e cozinha",
     "material escolar": "Escola",
     "mochila infantil": "Escola",
     "lancheira": "Escola",
@@ -33,6 +43,11 @@ PALAVRAS_CHAVE = {
     "tenis masculino": "Moda",
     "camiseta masculina": "Moda",
     "relogio masculino": "Moda",
+    "tenis feminino": "Moda",
+    "chinelo": "Moda",
+    "moda infantil": "Moda",
+    "perfume feminino": "Maquiagem e beleza",
+    "perfume masculino": "Maquiagem e beleza",
     "kit maquiagem": "Maquiagem e beleza",
     "paleta de sombras": "Maquiagem e beleza",
     "base maquiagem": "Maquiagem e beleza",
@@ -41,20 +56,24 @@ PALAVRAS_CHAVE = {
     "fone bluetooth": "Tecnologia útil",
     "carregador turbo": "Tecnologia útil",
     "luminaria led": "Tecnologia útil",
+    "smartwatch": "Tecnologia útil",
+    "capinha celular": "Tecnologia útil",
+    "caixa de som bluetooth": "Tecnologia útil",
     "kit presente": "Presentes",
 }
 
-# Vitrine (site): quantas ofertas manter publicadas e por quantos dias.
-VITRINE_MAXIMO = 80
+# Vitrine (site): quantas ofertas manter publicadas, quantas entram por rodada e por quantos dias.
+VITRINE_MAXIMO = 300
+VITRINE_POR_RODADA = 40
 VITRINE_DIAS = 14
 
 # Quantos produtos buscar por palavra (máximo da API: 50).
-PRODUTOS_POR_PALAVRA = 30
+PRODUTOS_POR_PALAVRA = 50
 
 # Filtros do checklist do playbook.
 NOTA_MINIMA = 4.5            # estrelas
-VENDAS_MINIMAS = 100         # unidades vendidas
-DESCONTO_MINIMO = 20         # % de desconto informado pela Shopee
+VENDAS_MINIMAS = 200         # unidades vendidas (foco no que já vende)
+DESCONTO_MINIMO = 10         # % de desconto informado pela Shopee
 COMISSAO_MINIMA = 0.05       # 5% de comissão
 PRECO_MINIMO = 10.0          # R$
 PRECO_MAXIMO = 600.0         # R$
