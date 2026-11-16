@@ -3,6 +3,7 @@
 Uso:
   python -m robo.main                 rodada de verdade (precisa das chaves nas variáveis de ambiente)
   python -m robo.main --demo          testa com produtos de exemplo e mostra os posts na tela
+  python -m robo.main --teste         manda os produtos de exemplo para o seu Telegram (testa o robô sem a Shopee)
   python -m robo.main --chat-id       mostra o seu chat_id depois que você mandar /start ao robô
 """
 
@@ -43,21 +44,34 @@ def coletar_exemplo():
         return json.load(f)
 
 
-def rodada(demo=False):
-    hist = {} if demo else historico.carregar()
-    nos = coletar_exemplo() if demo else coletar_reais()
+def rodada(demo=False, teste=False):
+    hist = {} if (demo or teste) else historico.carregar()
+    nos = coletar_exemplo() if (demo or teste) else coletar_reais()
     aprovadas = curadoria.escolher(nos, hist)
     escolhidas = curadoria.misturar_categorias(aprovadas)[: config.OFERTAS_POR_RODADA]
     da_vitrine = curadoria.misturar_categorias(aprovadas)[: config.VITRINE_POR_RODADA]
     print(f"{len(nos)} produtos analisados, {len(aprovadas)} aprovados, {len(escolhidas)} para o Telegram, {len(da_vitrine)} para a vitrine.")
 
     if demo:
+        barrados = {}
+        for no in nos:
+            motivo = curadoria.motivo_reprovacao(curadoria.normalizar(no))
+            if motivo:
+                barrados.setdefault(motivo, []).append(no.get("productName", ""))
+        for motivo, nomes in barrados.items():
+            print(f"Barrados por {motivo}: " + "; ".join(nomes))
         for i, oferta in enumerate(escolhidas, 1):
             print(f"\n----- Oferta {i} ({oferta['pontos']} pontos) -----")
             print(post.texto_canal(oferta))
         return escolhidas
 
     token, chat_id = _variavel("TELEGRAM_TOKEN"), _variavel("TELEGRAM_CHAT_ID")
+    if teste:
+        telegram.enviar_texto(token, chat_id, "🧪 <b>Teste do robô Papai Achou</b>\nProdutos de exemplo, links falsos. Se você está lendo isto, o envio está funcionando.")
+        for i, oferta in enumerate(escolhidas, 1):
+            telegram.enviar_oferta(token, chat_id, oferta["foto"], post.legenda_aprovacao(oferta, i, len(escolhidas)))
+        print("Teste enviado para o Telegram.")
+        return escolhidas
     if not escolhidas:
         telegram.enviar_texto(token, chat_id, "🔎 Rodada sem ofertas que passaram no filtro. Tento de novo na próxima.")
     for i, oferta in enumerate(escolhidas, 1):
@@ -82,4 +96,4 @@ if __name__ == "__main__":
     if "--chat-id" in sys.argv:
         mostrar_chat_id()
     else:
-        rodada(demo="--demo" in sys.argv)
+        rodada(demo="--demo" in sys.argv, teste="--teste" in sys.argv)
