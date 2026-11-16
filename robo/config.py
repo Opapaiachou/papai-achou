@@ -4,7 +4,7 @@ Tudo o que você pode ajustar sem mexer no resto do código fica aqui.
 """
 
 # Palavras pesquisadas na Shopee a cada rodada (o nicho do canal) e a categoria da vitrine.
-# Categorias da vitrine: Casa e cozinha, Escola, Crianças, Tecnologia útil, Presentes.
+# Categorias da vitrine: Casa e cozinha, Escola, Crianças, Moda, Maquiagem e beleza, Tecnologia útil, Presentes.
 PALAVRAS_CHAVE = {
     "organizador casa": "Casa e cozinha",
     "utensilios cozinha": "Casa e cozinha",
@@ -16,6 +16,17 @@ PALAVRAS_CHAVE = {
     "lancheira": "Escola",
     "brinquedo educativo": "Crianças",
     "brinquedo infantil": "Crianças",
+    "vestido feminino": "Moda",
+    "conjunto feminino": "Moda",
+    "bolsa feminina": "Moda",
+    "tenis masculino": "Moda",
+    "camiseta masculina": "Moda",
+    "relogio masculino": "Moda",
+    "kit maquiagem": "Maquiagem e beleza",
+    "paleta de sombras": "Maquiagem e beleza",
+    "base maquiagem": "Maquiagem e beleza",
+    "pincel maquiagem": "Maquiagem e beleza",
+    "skincare": "Maquiagem e beleza",
     "fone bluetooth": "Tecnologia útil",
     "carregador turbo": "Tecnologia útil",
     "luminaria led": "Tecnologia útil",
