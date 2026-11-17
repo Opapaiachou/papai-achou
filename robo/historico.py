@@ -49,3 +49,8 @@ def enviado_recentemente(item, dias):
 
 def marcar_enviado(historico, chave):
     historico[chave]["enviado_em"] = agora().isoformat()
+
+
+def nomes_enviados(historico, dias):
+    """Nomes dos produtos mandados nos últimos dias, para não mandar o mesmo produto de outra loja."""
+    return [item["nome"] for item in historico.values() if enviado_recentemente(item, dias)]
