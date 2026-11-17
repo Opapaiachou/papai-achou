@@ -44,7 +44,7 @@ def texto_canal(oferta):
 
 
 def legenda_aprovacao(oferta, posicao, total):
-    """Legenda em HTML para o seu chat privado: o post + os bastidores para você decidir."""
+    """Bastidores em HTML, só para você: comissão, pontos e se o preço já foi conferido."""
     if oferta.get("preco_conferido"):
         conferido = f"✅ Menor preço já visto: {_moeda(oferta['menor_preco_visto'])}"
     else:
@@ -55,10 +55,18 @@ def legenda_aprovacao(oferta, posicao, total):
         if oferta.get("comissao_valor"):
             comissao += f" (≈ {_moeda(oferta['comissao_valor'])} por venda)"
         comissao += "\n"
-    bastidores = (
-        f"<b>Oferta {posicao} de {total}</b> · {oferta['pontos']} pontos\n"
+    return (
+        f"🔒 <b>Oferta {posicao} de {total}</b> · {oferta['pontos']} pontos · só para você\n"
         + comissao
-        + f"{conferido}\n\n"
-        + "<b>Texto para o canal</b> (toque para copiar):\n"
+        + f"{conferido}\n"
+        + "⬇️ Post pronto para o WhatsApp logo abaixo"
     )
-    return bastidores + "<code>" + html.escape(texto_canal(oferta)) + "</code>"
+
+
+INSTRUCOES_WHATSAPP = (
+    "📲 <b>Como postar no Canal do WhatsApp</b>\n"
+    "1. Na oferta que quiser, segure a foto e toque em <b>Salvar</b> (vai para a galeria).\n"
+    "2. Segure a mesma mensagem e toque em <b>Copiar</b> (copia o texto).\n"
+    "3. No WhatsApp, abra o Canal Papai Achou, anexe a foto da galeria e cole o texto como legenda.\n"
+    "Os *asteriscos* e ~tis~ viram <b>negrito</b> e riscado no WhatsApp."
+)
