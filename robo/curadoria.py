@@ -2,7 +2,7 @@
 
 import math
 
-from robo import config, historico, regras
+from robo import semelhanca, config, historico, regras
 
 
 def _num(valor, padrao=0.0):
@@ -124,4 +124,5 @@ def escolher(nos, hist):
         aprovadas.append(oferta)
 
     aprovadas.sort(key=lambda o: o["pontos"], reverse=True)
-    return aprovadas
+    # O mesmo produto em lojas diferentes (ou já mandado nos últimos dias) aparece uma vez só: fica o de mais pontos.
+    return semelhanca.sem_repetidos(aprovadas, historico.nomes_enviados(hist, config.DIAS_SEM_REPETIR))
