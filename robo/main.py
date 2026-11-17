@@ -45,6 +45,12 @@ def coletar_exemplo():
         return json.load(f)
 
 
+def _enviar(token, chat_id, oferta, posicao, total):
+    """Duas mensagens: os bastidores (só para você) e o post pronto para o canal."""
+    telegram.enviar_texto(token, chat_id, post.legenda_aprovacao(oferta, posicao, total))
+    telegram.enviar_post(token, chat_id, oferta["foto"], post.texto_canal(oferta))
+
+
 def rodada(demo=False, teste=False, de_planilha=False):
     hist = {} if (demo or teste) else historico.carregar()
     if demo or teste:
@@ -77,14 +83,17 @@ def rodada(demo=False, teste=False, de_planilha=False):
     token, chat_id = _variavel("TELEGRAM_TOKEN"), _variavel("TELEGRAM_CHAT_ID")
     if teste:
         telegram.enviar_texto(token, chat_id, "🧪 <b>Teste do robô Papai Achou</b>\nProdutos de exemplo, links falsos. Se você está lendo isto, o envio está funcionando.")
+        telegram.enviar_texto(token, chat_id, post.INSTRUCOES_WHATSAPP)
         for i, oferta in enumerate(escolhidas, 1):
-            telegram.enviar_oferta(token, chat_id, oferta["foto"], post.legenda_aprovacao(oferta, i, len(escolhidas)))
+            _enviar(token, chat_id, oferta, i, len(escolhidas))
         print("Teste enviado para o Telegram.")
         return escolhidas
     if not escolhidas:
         telegram.enviar_texto(token, chat_id, "🔎 Rodada sem ofertas que passaram no filtro. Tento de novo na próxima.")
+    elif de_planilha:
+        telegram.enviar_texto(token, chat_id, post.INSTRUCOES_WHATSAPP)
     for i, oferta in enumerate(escolhidas, 1):
-        telegram.enviar_oferta(token, chat_id, oferta["foto"], post.legenda_aprovacao(oferta, i, len(escolhidas)))
+        _enviar(token, chat_id, oferta, i, len(escolhidas))
         historico.marcar_enviado(hist, oferta["chave"])
     historico.salvar(hist)
     vitrine.atualizar(da_vitrine)
