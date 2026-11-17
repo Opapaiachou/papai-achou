@@ -14,6 +14,21 @@ def _chamar(token, metodo, dados):
     return corpo
 
 
+def enviar_post(token, chat_id, foto, texto):
+    """Foto + texto puro (sem HTML), para copiar e colar no WhatsApp com os *asteriscos* intactos."""
+    if foto and len(texto) <= LIMITE_LEGENDA:
+        try:
+            return _chamar(token, "sendPhoto", {"chat_id": chat_id, "photo": foto, "caption": texto})
+        except RuntimeError:
+            pass
+    elif foto:
+        try:
+            _chamar(token, "sendPhoto", {"chat_id": chat_id, "photo": foto})
+        except RuntimeError:
+            pass
+    return _chamar(token, "sendMessage", {"chat_id": chat_id, "text": texto})
+
+
 def enviar_oferta(token, chat_id, foto, legenda):
     """Manda a foto com a legenda. Se a legenda passar do limite, a foto vai sozinha e o texto em seguida."""
     if len(legenda) <= LIMITE_LEGENDA:
