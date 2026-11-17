@@ -3,6 +3,7 @@
 Uso:
   python -m robo.main                 rodada de verdade (precisa das chaves nas variáveis de ambiente)
   python -m robo.main --demo          testa com produtos de exemplo e mostra os posts na tela
+  python -m robo.main --planilha      lê as planilhas da pasta "entrada" (links gerados no painel da Shopee)
   python -m robo.main --teste         manda os produtos de exemplo para o seu Telegram (testa o robô sem a Shopee)
   python -m robo.main --chat-id       mostra o seu chat_id depois que você mandar /start ao robô
 """
@@ -13,7 +14,7 @@ import sys
 
 import requests
 
-from robo import config, curadoria, historico, post, shopee, telegram, vitrine
+from robo import config, curadoria, historico, planilha, post, shopee, telegram, vitrine
 
 PASTA = os.path.dirname(os.path.dirname(__file__))
 
@@ -44,9 +45,17 @@ def coletar_exemplo():
         return json.load(f)
 
 
-def rodada(demo=False, teste=False):
+def rodada(demo=False, teste=False, de_planilha=False):
     hist = {} if (demo or teste) else historico.carregar()
-    nos = coletar_exemplo() if (demo or teste) else coletar_reais()
+    if demo or teste:
+        nos = coletar_exemplo()
+    elif de_planilha:
+        nos = planilha.coletar()
+        if not nos:
+            print("Nenhuma planilha nova na pasta entrada.")
+            return []
+    else:
+        nos = coletar_reais()
     aprovadas = curadoria.escolher(nos, hist)
     escolhidas = curadoria.misturar_categorias(aprovadas)[: config.OFERTAS_POR_RODADA]
     da_vitrine = curadoria.misturar_categorias(aprovadas)[: config.VITRINE_POR_RODADA]
@@ -79,6 +88,8 @@ def rodada(demo=False, teste=False):
         historico.marcar_enviado(hist, oferta["chave"])
     historico.salvar(hist)
     vitrine.atualizar(da_vitrine)
+    if de_planilha:
+        planilha.arquivar()
     return escolhidas
 
 
@@ -98,4 +109,4 @@ if __name__ == "__main__":
     if "--chat-id" in sys.argv:
         mostrar_chat_id()
     else:
-        rodada(demo="--demo" in sys.argv, teste="--teste" in sys.argv)
+        rodada(demo="--demo" in sys.argv, teste="--teste" in sys.argv, de_planilha="--planilha" in sys.argv)
