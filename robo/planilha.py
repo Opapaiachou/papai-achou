@@ -51,11 +51,12 @@ TERMOS_CATEGORIA = {
              "chinelo", "relogio", "jaqueta", "moletom", "conjunto", "biquini", "cueca", "calcinha", "meia"],
     "Escola": ["escolar", "mochila", "lancheira", "caderno", "estojo", "caneta", "lapis"],
     "Crianças": ["infantil", "bebe", "brinquedo", "crianca", "boneca", "carrinho", "montessori"],
-    "Tecnologia útil": ["fone", "carregador", "cabo", "bluetooth", "smartwatch", "celular", "led", "caixa de som",
-                        "mouse", "teclado", "suporte", "capinha", "pelicula", "power bank"],
-    "Casa e cozinha": ["cozinha", "organizador", "pote", "garrafa", "copo", "termico", "panela", "airfryer",
+    "Casa e cozinha": ["cozinha", "organizador", "pote", "garrafa", "copo", "termic", "panela", "airfryer",
                        "air fryer", "mop", "limpeza", "toalha", "lencol", "jogo de cama", "tapete", "parafusadeira",
-                       "ferramenta", "furadeira", "caneca"],
+                       "ferramenta", "furadeira", "caneca", "omeleteira", "espelho", "lavabo", "banheiro",
+                       "eletrica", "eletrico", "liquidificador", "cafeteira", "sanduicheira"],
+    "Tecnologia útil": ["fone", "carregador", "cabo usb", "bluetooth", "smartwatch", "celular", "caixa de som",
+                        "mouse", "teclado", "capinha de celular", "capinha celular", "pelicula", "power bank"],
 }
 
 
