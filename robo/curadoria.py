@@ -99,11 +99,14 @@ def misturar_categorias(ofertas):
 def escolher(nos, hist):
     """Recebe os produtos crus da Shopee e devolve todas as ofertas aprovadas, da melhor para a pior, já registrando os preços."""
     vistos = {}
+    nomes = set()
     for no in nos:
         oferta = normalizar(no)
-        if oferta["chave"] in vistos or not oferta["preco"]:
+        parecido = " ".join(oferta["nome"].lower().split()[:5])  # o mesmo produto em lojas diferentes
+        if oferta["chave"] in vistos or parecido in nomes or not oferta["preco"]:
             continue
         vistos[oferta["chave"]] = oferta
+        nomes.add(parecido)
 
     aprovadas = []
     for oferta in vistos.values():
