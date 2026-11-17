@@ -25,10 +25,17 @@ def texto_canal(oferta):
         linhas.append(f"De ~{_moeda(oferta['preco_antigo'])}~ por *{_moeda(oferta['preco'])}*")
     else:
         linhas.append(f"Por *{_moeda(oferta['preco'])}*")
-    linhas.append(f"📉 {oferta['desconto']:.0f}% de desconto")
-    nota = f"{oferta['nota']:.1f}".replace(".", ",")
-    vendas = f"{oferta['vendas']:,}".replace(",", ".")
-    linhas.append(f"⭐ {nota} | {vendas} vendidos | {oferta['loja']}")
+    if oferta.get("desconto"):
+        linhas.append(f"📉 {oferta['desconto']:.0f}% de desconto")
+    detalhes = []
+    if oferta.get("nota"):
+        detalhes.append("⭐ " + f"{oferta['nota']:.1f}".replace(".", ","))
+    if oferta.get("vendas"):
+        detalhes.append(f"{oferta['vendas']:,}".replace(",", ".") + " vendidos")
+    if oferta.get("loja") and oferta["loja"] != "Shopee":
+        detalhes.append(oferta["loja"])
+    if detalhes:
+        linhas.append(" | ".join(detalhes))
     linhas += ["", f"👉 {oferta['link']}", ""]
     if regras.eh_suplemento(oferta["nome"]):
         linhas.append(regras.AVISO_SUPLEMENTO)
@@ -42,10 +49,16 @@ def legenda_aprovacao(oferta, posicao, total):
         conferido = f"✅ Menor preço já visto: {_moeda(oferta['menor_preco_visto'])}"
     else:
         conferido = "🆕 Primeira vez que o robô vê este produto: confira o histórico antes"
+    comissao = ""
+    if oferta.get("comissao_taxa"):
+        comissao = f"💰 Comissão: {oferta['comissao_taxa'] * 100:.0f}%"
+        if oferta.get("comissao_valor"):
+            comissao += f" (≈ {_moeda(oferta['comissao_valor'])} por venda)"
+        comissao += "\n"
     bastidores = (
         f"<b>Oferta {posicao} de {total}</b> · {oferta['pontos']} pontos\n"
-        f"💰 Comissão: {oferta['comissao_taxa'] * 100:.0f}% (≈ {_moeda(oferta['comissao_valor'])} por venda)\n"
-        f"{conferido}\n\n"
-        "<b>Texto para o canal</b> (toque para copiar):\n"
+        + comissao
+        + f"{conferido}\n\n"
+        + "<b>Texto para o canal</b> (toque para copiar):\n"
     )
     return bastidores + "<code>" + html.escape(texto_canal(oferta)) + "</code>"
