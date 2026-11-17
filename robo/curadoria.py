@@ -12,6 +12,13 @@ def _num(valor, padrao=0.0):
         return padrao
 
 
+def _opcional(valor):
+    """Número ou None quando a informação não veio (ex.: planilha sem a coluna de nota)."""
+    if valor is None or valor == "":
+        return None
+    return _num(valor, None)
+
+
 def _loja_oficial(tipo):
     """shopType vem como lista de códigos; 1 = loja oficial (Shopee Mall)."""
     tipos = tipo if isinstance(tipo, list) else [tipo]
@@ -21,17 +28,19 @@ def _loja_oficial(tipo):
 def normalizar(no):
     """Converte o produto da Shopee para um formato simples, com números de verdade."""
     preco = _num(no.get("priceMin"))
-    desconto = _num(no.get("priceDiscountRate"))
-    preco_antigo = round(preco / (1 - desconto / 100), 2) if 0 < desconto < 100 else None
+    desconto = _opcional(no.get("priceDiscountRate"))
+    preco_antigo = _opcional(no.get("_precoAntigo"))  # a planilha às vezes traz o preço original
+    if not preco_antigo or preco_antigo <= preco:
+        preco_antigo = round(preco / (1 - desconto / 100), 2) if desconto and 0 < desconto < 100 else None
     return {
         "chave": f"{no.get('shopId')}-{no.get('itemId')}",
         "nome": (no.get("productName") or "").strip(),
         "preco": preco,
         "preco_antigo": preco_antigo,
         "desconto": desconto,
-        "nota": _num(no.get("ratingStar")),
-        "vendas": int(_num(no.get("sales"))),
-        "comissao_taxa": _num(no.get("commissionRate")),
+        "nota": _opcional(no.get("ratingStar")),
+        "vendas": None if _opcional(no.get("sales")) is None else int(_num(no.get("sales"))),
+        "comissao_taxa": _opcional(no.get("commissionRate")),
         "comissao_valor": _num(no.get("commission")),
         "foto": no.get("imageUrl"),
         "link": no.get("offerLink") or no.get("productLink"),
@@ -45,28 +54,29 @@ def motivo_reprovacao(oferta):
     bloqueio = regras.motivo_bloqueio(oferta["nome"])
     if bloqueio:
         return bloqueio
-    if oferta["nota"] < config.NOTA_MINIMA:
+    # Informação que não veio (None) não reprova: a planilha da Shopee nem sempre traz tudo.
+    if oferta["nota"] is not None and oferta["nota"] < config.NOTA_MINIMA:
         return "nota baixa"
-    if oferta["vendas"] < config.VENDAS_MINIMAS:
+    if oferta["vendas"] is not None and oferta["vendas"] < config.VENDAS_MINIMAS:
         return "poucas vendas"
-    if oferta["desconto"] < config.DESCONTO_MINIMO:
+    if oferta["desconto"] is not None and oferta["desconto"] < config.DESCONTO_MINIMO:
         return "desconto pequeno"
-    if oferta["comissao_taxa"] < config.COMISSAO_MINIMA:
+    if oferta["comissao_taxa"] is not None and oferta["comissao_taxa"] < config.COMISSAO_MINIMA:
         return "comissão baixa"
     if not config.PRECO_MINIMO <= oferta["preco"] <= config.PRECO_MAXIMO:
         return "fora da faixa de preço"
-    if not oferta["link"] or not oferta["foto"]:
-        return "sem link ou foto"
+    if not oferta["link"]:
+        return "sem link"
     return None
 
 
 def pontuar(oferta):
     """Nota de 0 a ~100: vendas e desconto pesam mais, depois avaliação e comissão."""
     return round(
-        oferta["desconto"] * 0.8
-        + (oferta["nota"] - 4.0) * 20
-        + math.log10(max(oferta["vendas"], 1)) * 8
-        + oferta["comissao_taxa"] * 100 * 0.5
+        (oferta["desconto"] or 0) * 0.8
+        + ((oferta["nota"] or 4.5) - 4.0) * 20
+        + math.log10(max(oferta["vendas"] or 1, 1)) * 8
+        + (oferta["comissao_taxa"] or 0) * 100 * 0.5
         + (5 if oferta["loja_oficial"] else 0),
         1,
     )
