@@ -1,7 +1,7 @@
 """Rodada do robô Papai Achou: busca, filtra, monta os posts e manda para você aprovar.
 
 Uso:
-  python -m robo.main                 rodada de verdade (precisa das chaves nas variáveis de ambiente)
+  python -m robo.main                 rodada de verdade: Magalu + Shopee (a Shopee só com as chaves da Open API)
   python -m robo.main --demo          testa com produtos de exemplo e mostra os posts na tela
   python -m robo.main --planilha      lê as planilhas da pasta "entrada" (links gerados no painel da Shopee)
   python -m robo.main --teste         manda os produtos de exemplo para o seu Telegram (testa o robô sem a Shopee)
@@ -14,7 +14,7 @@ import sys
 
 import requests
 
-from robo import config, curadoria, historico, planilha, post, shopee, telegram, vitrine
+from robo import config, curadoria, historico, magalu, planilha, post, shopee, telegram, vitrine
 
 PASTA = os.path.dirname(os.path.dirname(__file__))
 
@@ -27,6 +27,18 @@ def _variavel(nome):
 
 
 def coletar_reais():
+    """Busca em todas as lojas automáticas. A Shopee só entra se as chaves da Open API existirem."""
+    nos = []
+    if "Magalu" in config.LOJAS_AUTOMATICAS:
+        nos += magalu.coletar()
+    if "Shopee" in config.LOJAS_AUTOMATICAS and os.environ.get("SHOPEE_APP_ID", "").strip():
+        nos += coletar_shopee()
+    elif "Shopee" in config.LOJAS_AUTOMATICAS:
+        print("Shopee fora desta rodada: ainda sem as chaves da Open API (SHOPEE_APP_ID e SHOPEE_SECRET).")
+    return nos
+
+
+def coletar_shopee():
     app_id, segredo = _variavel("SHOPEE_APP_ID"), _variavel("SHOPEE_SECRET")
     nos = []
     for palavra, categoria in config.PALAVRAS_CHAVE.items():

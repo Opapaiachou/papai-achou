@@ -26,14 +26,19 @@ def _loja_oficial(tipo):
 
 
 def normalizar(no):
-    """Converte o produto da Shopee para um formato simples, com números de verdade."""
+    """Converte o produto (Shopee, Magalu ou Mercado Livre) para um formato simples, com números de verdade."""
     preco = _num(no.get("priceMin"))
     desconto = _opcional(no.get("priceDiscountRate"))
     preco_antigo = _opcional(no.get("_precoAntigo"))  # a planilha às vezes traz o preço original
     if not preco_antigo or preco_antigo <= preco:
         preco_antigo = round(preco / (1 - desconto / 100), 2) if desconto and 0 < desconto < 100 else None
+    plataforma = no.get("_plataforma") or "Shopee"
+    prefixo = "" if plataforma == "Shopee" else plataforma.lower().replace(" ", "") + "-"
     return {
-        "chave": f"{no.get('shopId')}-{no.get('itemId')}",
+        "chave": f"{prefixo}{no.get('shopId')}-{no.get('itemId')}",
+        "plataforma": plataforma,
+        "forma_preco": no.get("_formaPreco") or "",
+        "avaliacoes": None if _opcional(no.get("_avaliacoes")) is None else int(_num(no.get("_avaliacoes"))),
         "nome": (no.get("productName") or "").strip(),
         "preco": preco,
         "preco_antigo": preco_antigo,
@@ -59,6 +64,8 @@ def motivo_reprovacao(oferta):
         return "nota baixa"
     if oferta["vendas"] is not None and oferta["vendas"] < config.VENDAS_MINIMAS:
         return "poucas vendas"
+    if oferta.get("avaliacoes") is not None and oferta["avaliacoes"] < config.AVALIACOES_MINIMAS:
+        return "poucas avaliações"
     if oferta["desconto"] is not None and oferta["desconto"] < config.DESCONTO_MINIMO:
         return "desconto pequeno"
     if oferta["comissao_taxa"] is not None and oferta["comissao_taxa"] < config.COMISSAO_MINIMA:
@@ -75,7 +82,7 @@ def pontuar(oferta):
     return round(
         (oferta["desconto"] or 0) * 0.8
         + ((oferta["nota"] or 4.5) - 4.0) * 20
-        + math.log10(max(oferta["vendas"] or 1, 1)) * 8
+        + math.log10(max(oferta["vendas"] or (oferta.get("avaliacoes") or 0) * 10 or 1, 1)) * 8
         + (oferta["comissao_taxa"] or 0) * 100 * 0.5
         + (5 if oferta["loja_oficial"] else 0),
         1,
@@ -97,7 +104,7 @@ def misturar_categorias(ofertas):
 
 
 def escolher(nos, hist):
-    """Recebe os produtos crus da Shopee e devolve todas as ofertas aprovadas, da melhor para a pior, já registrando os preços."""
+    """Recebe os produtos crus das lojas e devolve todas as ofertas aprovadas, da melhor para a pior, já registrando os preços."""
     vistos = {}
     nomes = set()
     for no in nos:

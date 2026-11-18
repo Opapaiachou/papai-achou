@@ -18,13 +18,19 @@ def _limpar_nome(nome, limite=90):
     return nome if len(nome) <= limite else nome[: limite - 1].rstrip() + "…"
 
 
+def _forma(oferta):
+    """' no Pix' quando o preço mostrado é o do Pix (Magalu/Mercado Livre)."""
+    forma = (oferta.get("forma_preco") or "").strip()
+    return f" {forma}" if forma.lower().startswith("no ") else ""
+
+
 def texto_canal(oferta):
     """Texto pronto para colar no canal (WhatsApp e Telegram aceitam *negrito* e ~riscado~)."""
     linhas = [f"🔥 *{_limpar_nome(oferta['nome'])}*", ""]
     if oferta.get("preco_antigo"):
-        linhas.append(f"De ~{_moeda(oferta['preco_antigo'])}~ por *{_moeda(oferta['preco'])}*")
+        linhas.append(f"De ~{_moeda(oferta['preco_antigo'])}~ por *{_moeda(oferta['preco'])}*{_forma(oferta)}")
     else:
-        linhas.append(f"Por *{_moeda(oferta['preco'])}*")
+        linhas.append(f"Por *{_moeda(oferta['preco'])}*{_forma(oferta)}")
     if oferta.get("desconto"):
         linhas.append(f"📉 {oferta['desconto']:.0f}% de desconto")
     detalhes = []
@@ -32,7 +38,12 @@ def texto_canal(oferta):
         detalhes.append("⭐ " + f"{oferta['nota']:.1f}".replace(".", ","))
     if oferta.get("vendas"):
         detalhes.append(f"{oferta['vendas']:,}".replace(",", ".") + " vendidos")
-    if oferta.get("loja") and oferta["loja"] != "Shopee":
+    elif oferta.get("avaliacoes"):
+        detalhes.append(f"{oferta['avaliacoes']:,}".replace(",", ".") + " avaliações")
+    plataforma = oferta.get("plataforma") or "Shopee"
+    if plataforma != "Shopee":
+        detalhes.append(plataforma)
+    elif oferta.get("loja") and oferta["loja"] != "Shopee":
         detalhes.append(oferta["loja"])
     if detalhes:
         linhas.append(" | ".join(detalhes))
@@ -56,7 +67,7 @@ def legenda_aprovacao(oferta, posicao, total):
             comissao += f" (≈ {_moeda(oferta['comissao_valor'])} por venda)"
         comissao += "\n"
     return (
-        f"🔒 <b>Oferta {posicao} de {total}</b> · {oferta['pontos']} pontos · só para você\n"
+        f"🔒 <b>Oferta {posicao} de {total}</b> · {oferta.get('plataforma') or 'Shopee'} · {oferta['pontos']} pontos · só para você\n"
         + comissao
         + f"{conferido}\n"
         + "⬇️ Post pronto para o WhatsApp logo abaixo"

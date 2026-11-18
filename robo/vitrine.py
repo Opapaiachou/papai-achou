@@ -23,7 +23,7 @@ def atualizar(escolhidas, arquivo=ARQUIVO, agora=None):
     for oferta in escolhidas:
         item = {campo: oferta.get(campo) for campo in CAMPOS}
         item["nome"] = post._limpar_nome(oferta["nome"], limite=80)
-        item["plataforma"] = "Shopee"
+        item["plataforma"] = oferta.get("plataforma") or "Shopee"
         item["data"] = agora.isoformat()
         novas.append(item)
 
