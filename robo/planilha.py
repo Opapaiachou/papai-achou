@@ -39,6 +39,8 @@ COLUNAS = {
     "shopName": ["shop name", "nome da loja", "loja", "vendedor"],
     "itemId": ["item id", "id do item", "id do produto", "product id", "itemid"],
     "shopId": ["shop id", "id da loja", "shopid"],
+    "plataforma": ["plataforma", "marketplace"],
+    "formaPreco": ["forma do preco", "forma de pagamento"],
 }
 
 # Para descobrir a categoria pelo nome do produto (além das palavras do config).
@@ -166,6 +168,7 @@ def ler_arquivo(caminho):
         if taxa is not None and taxa > 1:
             taxa = taxa / 100  # 28 -> 0.28
         ids = re.findall(r"i\.(\d+)\.(\d+)", valor("productLink") or "")
+        plataforma = valor("plataforma") or "Shopee"
         nos.append({
             "itemId": valor("itemId") or (ids[0][1] if ids else f"{os.path.basename(caminho)}-{numero}"),
             "shopId": valor("shopId") or (ids[0][0] if ids else "planilha"),
@@ -180,7 +183,9 @@ def ler_arquivo(caminho):
             "imageUrl": valor("imageUrl") or FOTO_PADRAO,
             "productLink": valor("productLink"),
             "offerLink": link,
-            "shopName": valor("shopName") or "Shopee",
+            "shopName": valor("shopName") or plataforma,
+            "_plataforma": plataforma,
+            "_formaPreco": valor("formaPreco") or "",
             "shopType": [],
             "_categoria": categoria_do_nome(nome),
             "_origem": "planilha",
