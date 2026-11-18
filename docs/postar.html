@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Central de Postagem | Papai Achou</title>
+<meta name="theme-color" content="#5B2EFF">
+<link rel="icon" href="img/icone.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo.css?v=3">
+<style>
+.central main{max-width:720px}
+.aviso{background:#fff;border:2px solid var(--limao);border-radius:var(--raio);padding:14px 16px;margin-bottom:16px;font-size:15px}
+.aviso ol{margin:6px 0 0;padding-left:20px}
+.lista-post{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:14px}
+.post{background:#fff;border:1px solid var(--borda);border-radius:var(--raio);overflow:hidden;display:grid;grid-template-columns:120px 1fr;gap:0}
+.post.destaque{outline:3px solid var(--limao);outline-offset:2px}
+.post.feito{opacity:.55}
+.post .foto{aspect-ratio:auto;height:100%;min-height:120px}
+.post .corpo{padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.post h2{font-size:15px;line-height:1.3;margin:0;font-weight:600}
+.post .linha{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;font-size:13px;color:var(--cinza)}
+.post .atual{font-size:20px}
+.post .acoes{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.post .acoes .botao{min-height:44px;font-size:15px;padding:0 14px}
+.post .botao.principal{background:#25D366;color:#fff;flex:1 1 100%;justify-content:center}
+.botao.mini{background:var(--lilas);color:var(--violeta-escuro);border:1px solid var(--borda)}
+.estado{font-size:13px;font-weight:700;color:#15803d}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--violeta-escuro);color:#fff;padding:12px 18px;border-radius:12px;font-weight:600;z-index:20;max-width:90vw;text-align:center}
+@media (max-width:420px){.post{grid-template-columns:96px 1fr}}
+</style>
+</head>
+<body class="central" data-pagina="central">
+<header class="topo"><div class="dentro">
+<a class="marca" href="index.html"><img src="img/icone.png" alt="" width="44" height="44"><span>papai <b>achou</b></span></a>
+<nav class="menu" aria-label="Menu"><a href="postar.html" aria-current="page">Central de Postagem</a></nav>
+</div></header>
+<main id="conteudo">
+<div class="aviso">
+<b>Como postar no Canal em 2 toques</b>
+<ol>
+<li>Toque em <b>📲 Postar no Canal</b>.</li>
+<li>Escolha <b>WhatsApp</b> e depois o <b>Canal Papai Achou</b> e envie.</li>
+</ol>
+O texto também fica copiado: se a legenda não aparecer, é só colar.
+</div>
+<div id="chips" class="chips" role="group" aria-label="Filtro"></div>
+<p id="contagem" class="contagem" aria-live="polite"></p>
+<ul id="lista" class="lista-post"></ul>
+</main>
+<script src="postar.js?v=1"></script>
+</body>
+</html>

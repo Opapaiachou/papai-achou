@@ -2,6 +2,7 @@
 
 import html
 import re
+from urllib.parse import quote
 
 from robo import regras
 
@@ -54,6 +55,9 @@ def texto_canal(oferta):
     return "\n".join(linhas)
 
 
+CENTRAL = "https://opapaiachou.com.br/postar.html"
+
+
 def legenda_aprovacao(oferta, posicao, total):
     """Bastidores em HTML, só para você: comissão, pontos e se o preço já foi conferido."""
     if oferta.get("preco_conferido"):
@@ -70,6 +74,7 @@ def legenda_aprovacao(oferta, posicao, total):
         f"🔒 <b>Oferta {posicao} de {total}</b> · {oferta.get('plataforma') or 'Shopee'} · {oferta['pontos']} pontos · só para você\n"
         + comissao
         + f"{conferido}\n"
+        + f"📲 Postar no Canal em 2 toques: {CENTRAL}#{quote(str(oferta.get('chave', '')), safe='')}\n"
         + "⬇️ Post pronto para o WhatsApp logo abaixo"
     )
 
