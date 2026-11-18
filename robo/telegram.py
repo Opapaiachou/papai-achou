@@ -1,17 +1,31 @@
 """Envio das ofertas para o seu chat privado pelo robô oficial do Telegram."""
 
+import time
+
 import requests
 
 API = "https://api.telegram.org/bot{token}/{metodo}"
 LIMITE_LEGENDA = 1024
 
 
-def _chamar(token, metodo, dados):
-    resposta = requests.post(API.format(token=token, metodo=metodo), data=dados, timeout=30)
-    corpo = resposta.json()
-    if not corpo.get("ok"):
+def _chamar(token, metodo, dados, tentativas=3):
+    """Chama a API do Telegram. Se ele demorar ou cair, tenta de novo antes de desistir."""
+    for tentativa in range(1, tentativas + 1):
+        try:
+            resposta = requests.post(API.format(token=token, metodo=metodo), data=dados, timeout=60)
+            corpo = resposta.json()
+        except (requests.RequestException, ValueError) as erro:
+            if tentativa == tentativas:
+                raise RuntimeError(f"Telegram não respondeu a {metodo}: {erro}")
+            time.sleep(5 * tentativa)
+            continue
+        if corpo.get("ok"):
+            return corpo
+        espera = (corpo.get("parameters") or {}).get("retry_after")
+        if espera and tentativa < tentativas:  # limite de mensagens: espera o que o Telegram pedir
+            time.sleep(int(espera) + 1)
+            continue
         raise RuntimeError(f"Telegram recusou {metodo}: {corpo.get('description')}")
-    return corpo
 
 
 def enviar_post(token, chat_id, foto, texto):

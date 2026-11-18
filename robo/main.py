@@ -105,7 +105,11 @@ def rodada(demo=False, teste=False, de_planilha=False):
     elif de_planilha:
         telegram.enviar_texto(token, chat_id, post.INSTRUCOES_WHATSAPP)
     for i, oferta in enumerate(escolhidas, 1):
-        _enviar(token, chat_id, oferta, i, len(escolhidas))
+        try:
+            _enviar(token, chat_id, oferta, i, len(escolhidas))
+        except RuntimeError as erro:  # uma oferta com problema não derruba a rodada nem a vitrine
+            print(f"Aviso: não consegui mandar a oferta {i} para o Telegram: {erro}")
+            continue
         historico.marcar_enviado(hist, oferta["chave"])
     historico.salvar(hist)
     vitrine.atualizar(da_vitrine)
