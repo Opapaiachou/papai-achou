@@ -92,3 +92,14 @@ SHOPEE_ENDPOINT = "https://open-api.affiliate.shopee.com.br/graphql"
 
 # Ordenação da busca: 2 = mais vendidos.
 SHOPEE_ORDENACAO = 2
+
+# ---------- Magalu (Influenciador Magalu) ----------
+# Nome da loja no endereço magazinevoce.com.br/<loja>. O link de afiliado é o produto dentro dessa loja.
+MAGALU_LOJA = "magazineopapaiachou"
+# Pausa (segundos) entre uma busca e outra, para não sobrecarregar o site.
+MAGALU_PAUSA = 1.5
+# O Magalu não informa unidades vendidas: no lugar das vendas, exige um mínimo de avaliações.
+AVALIACOES_MINIMAS = 20
+
+# Lojas buscadas nas rodadas automáticas. A Shopee entra sozinha quando as chaves da Open API existirem.
+LOJAS_AUTOMATICAS = ["Magalu", "Shopee"]
