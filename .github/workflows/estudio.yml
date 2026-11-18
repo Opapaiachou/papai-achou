@@ -1,0 +1,65 @@
+name: Estúdio de vídeos Papai Achou
+
+on:
+  workflow_dispatch:
+    inputs:
+      videos:
+        description: "Códigos dos vídeos (ex.: V01 V02). Vazio = todos"
+        required: false
+        default: ""
+  push:
+    paths:
+      - "estudio/**"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: estudio
+  cancel-in-progress: false
+
+jobs:
+  renderizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar ffmpeg e bibliotecas
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+          pip install -q pillow numpy soundfile kokoro-onnx
+
+      - name: Baixar voz, fonte e mascote
+        working-directory: estudio
+        run: |
+          mkdir -p voz
+          curl -sSL -o voz/kokoro-v1.0.onnx https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx
+          curl -sSL -o voz/voices-v1.0.bin https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
+          curl -sSL -o Outfit.ttf "https://github.com/google/fonts/raw/main/ofl/outfit/Outfit%5Bwght%5D.ttf"
+          cp ../docs/img/mascote.png mascote.png
+          file Outfit.ttf mascote.png
+
+      - name: Renderizar vídeos e carrosséis
+        working-directory: estudio
+        run: |
+          python lote3.py ${{ github.event.inputs.videos }}
+          python posts.py
+
+      - name: Publicar na pasta midia/
+        run: |
+          mkdir -p midia/videos midia/posts
+          cp estudio/saida3/*.mp4 midia/videos/
+          cp -r estudio/saida/post_* midia/posts/
+          ls -R midia
+          git config user.name "estudio-papai-achou"
+          git config user.email "actions@users.noreply.github.com"
+          git add midia
+          git diff --cached --quiet || git commit -m "Estúdio: vídeos e carrosséis renderizados"
+          git pull --rebase -q
+          git push
