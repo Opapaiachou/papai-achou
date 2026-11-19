@@ -22,6 +22,8 @@ from datetime import datetime, timedelta
 
 import requests
 
+from robo import config, monitor
+
 # Até quantos produtos de cada marca entram por rodada (para a vitrine não virar uma loja só).
 POR_MARCA = 12
 # Desconto mínimo para um produto da Awin entrar (as marcas não informam vendas nem nota).
@@ -85,11 +87,17 @@ def converter(linha):
     economia = _num(linha.get("savings_percent"))
     if por and not de and economia and 0 < economia < 90:  # alguns feeds só trazem o % de desconto
         de = round(por / (1 - economia / 100), 2)
-    if not por or not de or de <= por:
+    sem_referencia = bool(por) and not de  # feed sem "preço de" (ex.: Kabum): vai para o acompanhamento
+    if not por or (de and de <= por):
         return None
-    desconto = round((1 - por / de) * 100)
-    if desconto < DESCONTO_MINIMO_AWIN or desconto > 85:  # desconto absurdo costuma ser erro do feed
-        return None
+    if sem_referencia:
+        desconto = None
+        if not config.PRECO_MINIMO <= por <= config.PRECO_MAXIMO:
+            return None
+    else:
+        desconto = round((1 - por / de) * 100)
+        if desconto < DESCONTO_MINIMO_AWIN or desconto > 85:  # desconto absurdo costuma ser erro do feed
+            return None
     estoque = str(linha.get("in_stock", "1")).strip().lower()
     if estoque in ("0", "false", "no", "nao", "não"):
         return None
@@ -122,6 +130,7 @@ def converter(linha):
         "shopType": [1],                              # marca oficial (loja da própria marca)
         "_categoria": categoria,
         "_plataforma": "Awin",
+        "_semReferencia": sem_referencia,
     }
 
 
@@ -133,7 +142,7 @@ def _motivo(linha):
     if not por:
         return "sem preço"
     if not de and not economia:
-        return "sem preço antigo nem % de desconto"
+        return "sem preço antigo (fora do nicho ou da faixa de preço)"
     if de and de <= por:
         return "preço antigo igual ou menor"
     if not categoria_de(linha.get("product_name"), linha.get("merchant_category"), linha.get("category_name")):
@@ -198,8 +207,21 @@ def coletar():
     else:
         linhas = _baixar(url)
     por_marca, motivos = {}, {}
+    acompanhados, em_queda = 0, 0
+    precos = monitor.carregar()
     for linha in linhas:
         no = converter(linha)
+        if no and no.get("_semReferencia"):
+            # Sem "preço de" no feed: anota o preço e só vira oferta se caiu frente ao nosso histórico.
+            acompanhados += 1
+            chave = f"awin-{no['shopId']}-{no['itemId']}"
+            tipico = monitor.registrar(precos, chave, no["productName"], no["priceMin"])
+            desconto = monitor.em_queda(no["priceMin"], tipico)
+            if not desconto:
+                continue
+            em_queda += 1
+            no["_precoAntigo"] = round(tipico, 2)
+            no["priceDiscountRate"] = desconto
         if no:
             por_marca.setdefault(no["shopName"], []).append(no)
         else:
@@ -215,6 +237,9 @@ def coletar():
     for marca, lista in por_marca.items():
         lista.sort(key=lambda n: n["priceDiscountRate"], reverse=True)
         nos += lista[:POR_MARCA]
+    monitor.salvar(precos)
+    if acompanhados:
+        print(f"Awin acompanhamento: {acompanhados} produtos sem 'preço de' com preço anotado, {em_queda} em queda real hoje.")
     print(f"Awin: {len(linhas)} produtos lidos, {len(nos)} no nicho e com desconto, de {len(por_marca)} marcas.")
     return nos
 
