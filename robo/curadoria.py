@@ -34,9 +34,11 @@ def normalizar(no):
         preco_antigo = round(preco / (1 - desconto / 100), 2) if desconto and 0 < desconto < 100 else None
     plataforma = no.get("_plataforma") or "Shopee"
     prefixo = "" if plataforma == "Shopee" else plataforma.lower().replace(" ", "") + "-"
+    # Na Awin cada oferta é de uma marca (Mizuno, Natura...): o nome da marca aparece no lugar da loja.
+    exibir = (no.get("shopName") or "Awin") if plataforma == "Awin" else plataforma
     return {
         "chave": f"{prefixo}{no.get('shopId')}-{no.get('itemId')}",
-        "plataforma": plataforma,
+        "plataforma": exibir,
         "forma_preco": no.get("_formaPreco") or "",
         "avaliacoes": None if _opcional(no.get("_avaliacoes")) is None else int(_num(no.get("_avaliacoes"))),
         "nome": (no.get("productName") or "").strip(),

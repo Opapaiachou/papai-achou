@@ -14,7 +14,7 @@ import sys
 
 import requests
 
-from robo import config, curadoria, historico, magalu, planilha, post, shopee, telegram, vitrine
+from robo import awin, config, curadoria, historico, magalu, planilha, post, shopee, telegram, vitrine
 
 PASTA = os.path.dirname(os.path.dirname(__file__))
 
@@ -31,6 +31,11 @@ def coletar_reais():
     nos = []
     if "Magalu" in config.LOJAS_AUTOMATICAS:
         nos += magalu.coletar()
+    if "Awin" in config.LOJAS_AUTOMATICAS:
+        try:
+            nos += awin.coletar()
+        except Exception as erro:  # feed fora do ar não derruba a rodada
+            print(f"Aviso Awin: {erro}")
     if "Shopee" in config.LOJAS_AUTOMATICAS and os.environ.get("SHOPEE_APP_ID", "").strip():
         nos += coletar_shopee()
     elif "Shopee" in config.LOJAS_AUTOMATICAS:
