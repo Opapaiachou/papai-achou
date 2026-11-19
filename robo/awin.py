@@ -31,7 +31,7 @@ DIAS_FEED_MAXIMO = 10
 # Colunas pedidas à Awin para cada feed.
 COLUNAS = ("aw_deep_link,product_name,aw_product_id,merchant_product_id,merchant_image_url,aw_image_url,"
            "merchant_category,category_name,search_price,store_price,rrp_price,product_price_old,in_stock,"
-           "currency,merchant_name,merchant_id,merchant_deep_link,average_rating,reviews")
+           "savings_percent,currency,merchant_name,merchant_id,merchant_deep_link,average_rating,reviews")
 
 # Palavra no nome/categoria do produto -> categoria da vitrine. A primeira que bater vale.
 MAPA_CATEGORIAS = [
@@ -82,6 +82,9 @@ def converter(linha):
     """Linha do feed da Awin -> mesmo formato que o robô usa para as outras lojas."""
     por = _num(linha.get("search_price")) or _num(linha.get("store_price"))
     de = _num(linha.get("product_price_old")) or _num(linha.get("rrp_price"))
+    economia = _num(linha.get("savings_percent"))
+    if por and not de and economia and 0 < economia < 90:  # alguns feeds só trazem o % de desconto
+        de = round(por / (1 - economia / 100), 2)
     if not por or not de or de <= por:
         return None
     desconto = round((1 - por / de) * 100)
