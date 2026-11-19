@@ -138,12 +138,30 @@
     var s = document.createElement("span"); s.className = "sem-foto"; s.textContent = "papai achou"; el.insertBefore(s, el.firstChild);
   }
 
+  // Mistura as lojas: cada loja fica espalhada por toda a vitrine, na proporção do que ela tem,
+  // em vez de aparecer vários produtos da mesma loja em sequência. A ordem de cada loja é mantida.
+  function intercalar(lista) {
+    var grupos = {}, ordem = [];
+    lista.forEach(function (o) {
+      var k = o.plataforma || "Shopee";
+      if (!grupos[k]) { grupos[k] = []; ordem.push(k); }
+      grupos[k].push(o);
+    });
+    var marcados = [];
+    ordem.forEach(function (k, g) {
+      var n = grupos[k].length;
+      grupos[k].forEach(function (o, i) { marcados.push({ o: o, pos: (i + 0.5) / n, g: g }); });
+    });
+    marcados.sort(function (a, b) { return a.pos - b.pos || a.g - b.g; });
+    return marcados.map(function (m) { return m.o; });
+  }
+
   function desenhar() {
-    var lista = estado.ofertas.filter(function (o) {
+    var lista = intercalar(estado.ofertas.filter(function (o) {
       var okCat = estado.categoria === "Todos" || o.categoria === estado.categoria;
       var okBusca = !estado.busca || semAcento(o.nome + " " + o.categoria).indexOf(estado.busca) >= 0;
       return okCat && okBusca;
-    });
+    }));
     grade.innerHTML = "";
     if (!estado.ofertas.length) {
       grade.innerHTML = '<li class="vazio"><h2>Os primeiros achados estão chegando</h2><p>Enquanto isso, entre no canal para receber as ofertas assim que o papai achar.</p></li>';
