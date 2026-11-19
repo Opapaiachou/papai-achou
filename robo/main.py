@@ -92,8 +92,8 @@ def rodada(demo=False, teste=False, de_planilha=False):
                 barradas[motivo] = barradas.get(motivo, 0) + 1
     if barradas:
         print("Awin barradas na curadoria: " + ", ".join(f"{k} {v}" for k, v in barradas.items()))
-    escolhidas = curadoria.misturar_categorias(aprovadas)[: config.OFERTAS_POR_RODADA]
-    da_vitrine = curadoria.misturar_categorias(aprovadas)[: config.VITRINE_POR_RODADA]
+    escolhidas = curadoria.equilibrar_lojas(aprovadas, config.OFERTAS_POR_RODADA)
+    da_vitrine = curadoria.equilibrar_lojas(aprovadas, config.VITRINE_POR_RODADA)
     print(f"{len(nos)} produtos analisados, {len(aprovadas)} aprovados, {len(escolhidas)} para o Telegram, {len(da_vitrine)} para a vitrine.")
 
     if demo:

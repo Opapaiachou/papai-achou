@@ -105,6 +105,21 @@ def misturar_categorias(ofertas):
     return mistura
 
 
+def equilibrar_lojas(ofertas, limite):
+    """Escolhe as ofertas da vitrine alternando as lojas, para uma loja grande não tomar todas as vagas.
+    Dentro de cada loja, as categorias continuam misturadas."""
+    por_loja = {}
+    for oferta in ofertas:
+        por_loja.setdefault(oferta["plataforma"], []).append(oferta)
+    filas = [misturar_categorias(lista) for lista in por_loja.values()]
+    escolhidas = []
+    while any(filas) and len(escolhidas) < limite:
+        for fila in filas:
+            if fila and len(escolhidas) < limite:
+                escolhidas.append(fila.pop(0))
+    return escolhidas
+
+
 def escolher(nos, hist):
     """Recebe os produtos crus das lojas e devolve todas as ofertas aprovadas, da melhor para a pior, já registrando os preços."""
     vistos = {}
