@@ -3,9 +3,11 @@
 Como funciona:
 - Na Awin, cada marca aprovada pode liberar um "feed de produtos" (lista com preço, preço antigo,
   foto, estoque e o link de afiliado já pronto, o campo aw_deep_link).
-- Em Ferramentas > Crie um Feed você escolhe as marcas e a Awin gera UM endereço de download.
-  Esse endereço tem a sua chave, então ele fica guardado como segredo AWIN_FEED_URL no GitHub
-  (o repositório é público).
+- Em Ferramentas > Crie um Feed, no topo, fica o link "Download da Lista de Feed" (feedList).
+  Esse link tem a sua chave, então ele fica guardado como segredo AWIN_FEED_URL no GitHub
+  (o repositório é público). Com ele o robô descobre sozinho as marcas aprovadas no Brasil:
+  cada marca nova aprovada entra na rodada seguinte, sem mexer em nada.
+- Feed parado há mais de DIAS_FEED_MAXIMO dias fica de fora (preço velho não vai para o site).
 - O robô baixa o feed, fica só com o que tem desconto de verdade, está em estoque e cabe no
   nosso nicho, e entrega no mesmo formato das outras lojas.
 """
@@ -14,7 +16,9 @@ import csv
 import gzip
 import io
 import os
+import re
 import unicodedata
+from datetime import datetime, timedelta
 
 import requests
 
@@ -22,6 +26,12 @@ import requests
 POR_MARCA = 12
 # Desconto mínimo para um produto da Awin entrar (as marcas não informam vendas nem nota).
 DESCONTO_MINIMO_AWIN = 15
+# Feed que a marca não atualiza há mais que isso fica de fora (o preço pode estar velho).
+DIAS_FEED_MAXIMO = 10
+# Colunas pedidas à Awin para cada feed.
+COLUNAS = ("aw_deep_link,product_name,aw_product_id,merchant_product_id,merchant_image_url,aw_image_url,"
+           "merchant_category,category_name,search_price,store_price,rrp_price,product_price_old,in_stock,"
+           "currency,merchant_name,merchant_id,merchant_deep_link,average_rating,reviews")
 
 # Palavra no nome/categoria do produto -> categoria da vitrine. A primeira que bater vale.
 MAPA_CATEGORIAS = [
@@ -120,16 +130,56 @@ def _ler_feed(conteudo):
     return csv.DictReader(io.StringIO(texto), delimiter=separador)
 
 
+def _feeds_ativos(url_lista):
+    """Lê a lista de feeds e devolve os das marcas aprovadas no Brasil: (marca, url, atualizado_em)."""
+    resposta = requests.get(url_lista, timeout=60)
+    resposta.raise_for_status()
+    feeds = []
+    for linha in csv.DictReader(io.StringIO(resposta.content.decode("utf-8-sig", errors="replace"))):
+        if (linha.get("Membership Status") or "").strip().lower() != "active":
+            continue
+        if (linha.get("Primary Region") or "").strip().upper() != "BR":
+            continue
+        url = (linha.get("URL") or "").strip()
+        if "productdata.awin.com" not in url:
+            print(f"Awin: feed de {linha.get('Advertiser Name')} em formato que o robô ainda não lê; ficou de fora.")
+            continue
+        url = re.sub(r"/columns/[^/]+/", "/columns/" + COLUNAS.replace(",", "%2C") + "/", url)
+        try:
+            atualizado = datetime.strptime((linha.get("Last Imported") or "").strip(), "%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            atualizado = None
+        feeds.append(((linha.get("Advertiser Name") or "").replace(" BR", "").strip(), url, atualizado))
+    return feeds
+
+
+def _baixar(url):
+    resposta = requests.get(url, timeout=180)
+    resposta.raise_for_status()
+    return list(_ler_feed(resposta.content))
+
+
 def coletar():
     url = os.environ.get("AWIN_FEED_URL", "").strip()
     if not url:
-        print("Awin fora desta rodada: ainda sem o segredo AWIN_FEED_URL (feed de produtos).")
+        print("Awin fora desta rodada: ainda sem o segredo AWIN_FEED_URL (lista de feeds).")
         return []
-    resposta = requests.get(url, timeout=180)
-    resposta.raise_for_status()
-    por_marca, lidos = {}, 0
-    for linha in _ler_feed(resposta.content):
-        lidos += 1
+    if "feedList" in url:
+        linhas, limite = [], datetime.now() - timedelta(days=DIAS_FEED_MAXIMO)
+        for marca, url_feed, atualizado in _feeds_ativos(url):
+            if atualizado and atualizado < limite:
+                print(f"Awin: {marca} fora (feed sem atualização desde {atualizado:%d/%m/%Y}).")
+                continue
+            try:
+                novas = _baixar(url_feed)
+                print(f"Awin: {marca} com {len(novas)} produtos no feed.")
+                linhas += novas
+            except Exception as erro:  # uma marca com problema não derruba as outras
+                print(f"Aviso Awin: falha no feed de {marca}: {erro}")
+    else:
+        linhas = _baixar(url)
+    por_marca = {}
+    for linha in linhas:
         no = converter(linha)
         if no:
             por_marca.setdefault(no["shopName"], []).append(no)
@@ -137,7 +187,7 @@ def coletar():
     for marca, lista in por_marca.items():
         lista.sort(key=lambda n: n["priceDiscountRate"], reverse=True)
         nos += lista[:POR_MARCA]
-    print(f"Awin: {lidos} produtos no feed, {len(nos)} no nicho e com desconto, de {len(por_marca)} marcas.")
+    print(f"Awin: {len(linhas)} produtos lidos, {len(nos)} no nicho e com desconto, de {len(por_marca)} marcas.")
     return nos
 
 
