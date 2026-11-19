@@ -9,6 +9,7 @@ raw.githubusercontent.com, que libera o download para qualquer site.
 import hashlib
 import io
 import os
+import time
 
 import requests
 
@@ -33,16 +34,23 @@ def garantir(chave, url):
     arquivo = nome_arquivo(chave)
     caminho = os.path.join(PASTA, arquivo)
     if not os.path.exists(caminho):
-        try:
-            from PIL import Image
-            resposta = requests.get(url, headers=CABECALHOS, timeout=20)
-            resposta.raise_for_status()
-            imagem = Image.open(io.BytesIO(resposta.content)).convert("RGB")
-            imagem.thumbnail((LADO_MAXIMO, LADO_MAXIMO))
-            os.makedirs(PASTA, exist_ok=True)
-            imagem.save(caminho, "JPEG", quality=85, optimize=True)
-        except Exception as erro:  # foto com problema não derruba a rodada
-            print(f"Aviso: não consegui guardar a foto de {chave}: {erro}")
+        from PIL import Image
+        ultimo_erro = None
+        for tentativa in range(3):  # a Magalu às vezes recusa quando pedimos muitas fotos seguidas
+            try:
+                time.sleep(0.3 + tentativa * 1.5)
+                resposta = requests.get(url, headers=CABECALHOS, timeout=25)
+                resposta.raise_for_status()
+                imagem = Image.open(io.BytesIO(resposta.content)).convert("RGB")
+                imagem.thumbnail((LADO_MAXIMO, LADO_MAXIMO))
+                os.makedirs(PASTA, exist_ok=True)
+                imagem.save(caminho, "JPEG", quality=85, optimize=True)
+                ultimo_erro = None
+                break
+            except Exception as erro:  # foto com problema não derruba a rodada
+                ultimo_erro = erro
+        if ultimo_erro is not None:
+            print(f"Aviso: não consegui guardar a foto de {chave}: {ultimo_erro}")
             return None
     return URL_PUBLICA.format(arquivo=arquivo)
 
