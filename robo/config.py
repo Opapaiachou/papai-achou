@@ -60,11 +60,22 @@ PALAVRAS_CHAVE = {
     "capinha celular": "Tecnologia útil",
     "caixa de som bluetooth": "Tecnologia útil",
     "kit presente": "Presentes",
+    # Reforço Black Friday (19/11)
+    "air fryer": "Casa e cozinha",
+    "jogo de panelas": "Casa e cozinha",
+    "panela eletrica": "Casa e cozinha",
+    "jogo de toalhas": "Casa e cozinha",
+    "camiseta dry fit": "Fitness",
+    "tenis infantil": "Crianças",
+    "jogo de tabuleiro": "Crianças",
+    "mochila notebook": "Tecnologia útil",
+    "kit perfume": "Presentes",
+    "kit cuidados masculino": "Presentes",
 }
 
 # Vitrine (site): quantas ofertas manter publicadas, quantas entram por rodada e por quantos dias.
 VITRINE_MAXIMO = 300
-VITRINE_POR_RODADA = 40
+VITRINE_POR_RODADA = 80
 VITRINE_DIAS = 14
 
 # Quantos produtos buscar por palavra (máximo da API: 50).
@@ -102,4 +113,4 @@ MAGALU_PAUSA = 1.5
 AVALIACOES_MINIMAS = 20
 
 # Lojas buscadas nas rodadas automáticas. A Shopee entra sozinha quando as chaves da Open API existirem.
-LOJAS_AUTOMATICAS = ["Magalu", "Shopee"]
+LOJAS_AUTOMATICAS = ["Magalu", "Awin", "Shopee"]
