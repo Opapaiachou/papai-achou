@@ -128,7 +128,8 @@
     var a = document.createElement("a");
     a.className = "botao violeta"; a.href = o.link; a.target = "_blank"; a.rel = "noopener sponsored";
     var loja = o.plataforma || "Shopee";
-    a.textContent = (loja === "Mercado Livre" ? "Ver no " : "Ver na ") + loja;
+    a.textContent = "Comprar";
+    a.setAttribute("aria-label", "Comprar " + o.nome + " em " + loja);
     info.appendChild(a);
     li.appendChild(info);
     return li;
