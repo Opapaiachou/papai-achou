@@ -125,6 +125,22 @@ def converter(linha):
     }
 
 
+def _motivo(linha):
+    """Por que a linha ficou de fora (só para o diagnóstico no log)."""
+    por = _num(linha.get("search_price")) or _num(linha.get("store_price"))
+    de = _num(linha.get("product_price_old")) or _num(linha.get("rrp_price"))
+    economia = _num(linha.get("savings_percent"))
+    if not por:
+        return "sem preço"
+    if not de and not economia:
+        return "sem preço antigo nem % de desconto"
+    if de and de <= por:
+        return "preço antigo igual ou menor"
+    if not categoria_de(linha.get("product_name"), linha.get("merchant_category"), linha.get("category_name")):
+        return "fora do nicho"
+    return "desconto menor que o mínimo ou sem estoque"
+
+
 def _ler_feed(conteudo):
     if conteudo[:2] == b"\x1f\x8b":
         conteudo = gzip.decompress(conteudo)
@@ -181,11 +197,20 @@ def coletar():
                 print(f"Aviso Awin: falha no feed de {marca}: {erro}")
     else:
         linhas = _baixar(url)
-    por_marca = {}
+    por_marca, motivos = {}, {}
     for linha in linhas:
         no = converter(linha)
         if no:
             por_marca.setdefault(no["shopName"], []).append(no)
+        else:
+            marca = (linha.get("merchant_name") or "?").replace(" BR", "").strip()
+            chave = (marca, _motivo(linha))
+            motivos[chave] = motivos.get(chave, 0) + 1
+    for (marca, motivo), qtd in sorted(motivos.items(), key=lambda x: -x[1])[:12]:
+        print(f"Awin diagnóstico: {marca} - {qtd} fora por {motivo}")
+    for marca, lista in por_marca.items():
+        for no in lista[:3]:
+            print(f"Awin exemplo: {marca} | {no['productName'][:50]} | R$ {no['priceMin']} de {no['_precoAntigo']} | {no['_categoria']}")
     nos = []
     for marca, lista in por_marca.items():
         lista.sort(key=lambda n: n["priceDiscountRate"], reverse=True)

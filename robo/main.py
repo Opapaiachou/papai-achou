@@ -80,6 +80,18 @@ def rodada(demo=False, teste=False, de_planilha=False):
     else:
         nos = coletar_reais()
     aprovadas = curadoria.escolher(nos, hist)
+    por_loja = {}
+    for oferta in aprovadas:
+        por_loja[oferta["plataforma"]] = por_loja.get(oferta["plataforma"], 0) + 1
+    print("Aprovadas por loja: " + ", ".join(f"{k} {v}" for k, v in sorted(por_loja.items(), key=lambda x: -x[1])))
+    barradas = {}
+    for no in nos:
+        if no.get("_plataforma") == "Awin":
+            motivo = curadoria.motivo_reprovacao(curadoria.normalizar(no))
+            if motivo:
+                barradas[motivo] = barradas.get(motivo, 0) + 1
+    if barradas:
+        print("Awin barradas na curadoria: " + ", ".join(f"{k} {v}" for k, v in barradas.items()))
     escolhidas = curadoria.misturar_categorias(aprovadas)[: config.OFERTAS_POR_RODADA]
     da_vitrine = curadoria.misturar_categorias(aprovadas)[: config.VITRINE_POR_RODADA]
     print(f"{len(nos)} produtos analisados, {len(aprovadas)} aprovados, {len(escolhidas)} para o Telegram, {len(da_vitrine)} para a vitrine.")
