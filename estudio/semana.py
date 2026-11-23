@@ -158,7 +158,7 @@ def nome_curto(nome, tam, larg, linhas=2):
     out = ""
     for w in nome.replace("*", "").split():
         t = (out + " " + w).strip()
-        if len(m.quebrar(t, f, larg)) > linhas:
+        if len(m.quebrar(t + "…", f, larg)) > linhas:
             return out.rstrip(",;-– ") + "…"
         out = t
     return out
