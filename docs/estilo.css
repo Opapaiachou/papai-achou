@@ -72,3 +72,15 @@ main{max-width:1120px;margin:0 auto;padding:24px 16px 48px}
 .rodape .dentro{max-width:1120px;margin:0 auto;padding:28px 16px;display:flex;flex-direction:column;gap:12px;font-size:14px}
 .rodape a{color:var(--limao)}
 .rodape .redes{display:flex;gap:16px;flex-wrap:wrap;font-weight:600}
+
+/* Cupons e promoções das marcas */
+.cupons{margin:0 0 24px}
+.cupons h2{font-family:Outfit,sans-serif;font-size:22px;margin:0 0 12px}
+.cupons-lista{list-style:none;margin:0;padding:0 0 8px;display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory}
+.cupom{flex:0 0 260px;scroll-snap-align:start;background:#fff;border:2px dashed var(--violeta);border-radius:var(--raio);padding:14px;display:flex;flex-direction:column;gap:8px}
+.cupom-topo{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.cupom-marca{background:var(--violeta-escuro);color:#fff;font-weight:600;font-size:12px;padding:4px 8px;border-radius:8px}
+.cupom-ate{font-size:13px;color:var(--cinza)}
+.cupom-titulo{margin:0;font-weight:600;font-size:15px;line-height:1.35}
+.cupom-codigo{font-family:Outfit,sans-serif;font-weight:800;font-size:18px;letter-spacing:.04em;background:var(--limao);color:var(--violeta-escuro);border-radius:10px;padding:6px 10px;text-align:center}
+.cupom .botao{margin-top:auto;justify-content:center;font-size:15px}

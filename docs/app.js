@@ -95,6 +95,42 @@
 
   if (busca) busca.addEventListener("input", function () { estado.busca = semAcento(busca.value); desenhar(); });
 
+  // Cupons e promoções das marcas (docs/cupons.json). Some sozinho depois da data de validade.
+  var caixaCupons = document.getElementById("lista-cupons");
+  if (caixaCupons) {
+    carregar("cupons.json", "json").then(function (lista) {
+      var hoje = new Date().toISOString().slice(0, 10);
+      var validos = (lista || []).filter(function (c) { return !c.ate || c.ate >= hoje; });
+      if (pagina === "black-friday") validos.sort(function (a, b) { return (a.ate || "").localeCompare(b.ate || ""); });
+      validos = intercalar(validos.map(function (c) { c.plataforma = c.marca; return c; }));
+      if (!validos.length) { document.getElementById("cupons").hidden = true; return; }
+      validos.forEach(function (c) { caixaCupons.appendChild(cartaoCupom(c)); });
+    });
+  }
+
+  function cartaoCupom(c) {
+    var li = document.createElement("li"); li.className = "cupom";
+    var topo = document.createElement("div"); topo.className = "cupom-topo";
+    var marca = document.createElement("span"); marca.className = "cupom-marca"; marca.textContent = c.marca;
+    var ate = document.createElement("span"); ate.className = "cupom-ate"; ate.textContent = c.ate ? "até " + dataCurta(c.ate) : "";
+    topo.appendChild(marca); topo.appendChild(ate); li.appendChild(topo);
+    var t = document.createElement("p"); t.className = "cupom-titulo"; t.textContent = c.titulo; li.appendChild(t);
+    var a = document.createElement("a");
+    a.className = "botao violeta"; a.href = c.link; a.target = "_blank"; a.rel = "noopener sponsored";
+    if (c.cupom) {
+      var cod = document.createElement("div"); cod.className = "cupom-codigo"; cod.textContent = c.cupom; li.appendChild(cod);
+      a.textContent = "Copiar cupom e ir à loja";
+      a.addEventListener("click", function () {
+        try { navigator.clipboard.writeText(c.cupom); } catch (e) {}
+        cod.textContent = c.cupom + " ✓ copiado";
+      });
+    } else {
+      a.textContent = "Ver promoção";
+    }
+    li.appendChild(a);
+    return li;
+  }
+
   function cartao(o) {
     var li = document.createElement("li"); li.className = "cartao";
     var foto = document.createElement("div"); foto.className = "foto";
