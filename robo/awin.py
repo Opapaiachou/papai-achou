@@ -37,6 +37,9 @@ COLUNAS = ("aw_deep_link,product_name,aw_product_id,merchant_product_id,merchant
 
 # Palavra no nome/categoria do produto -> categoria da vitrine. A primeira que bater vale.
 MAPA_CATEGORIAS = [
+    (("gamer", "gaming", "headset", "xbox", "playstation", "ps5", "nintendo", "console", "mousepad",
+      "placa de video", "rtx", "geforce", "radeon", "memoria ram", "ssd", "teclado mecanico", "redragon",
+      "hyperx", "razer"), "Gamer"),
     (("legging", "fitness", "academia", "treino", "whey", "creatina", "corrida", "running", "yoga", "haltere",
       "suplemento", "proteina", "garrafa termica stanley", "squeeze"), "Fitness"),
     (("mochila escolar", "estojo", "lancheira", "caderno", "escolar"), "Escola"),
