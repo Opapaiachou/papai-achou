@@ -1,8 +1,21 @@
 """Filtra e pontua as ofertas segundo o checklist do playbook do Papai Achou."""
 
 import math
+import re
 
 from robo import semelhanca, config, historico, regras
+
+# Produto gamer vai para a categoria Gamer, venha de qualquer loja (Kabum, Magalu, Mercado Livre...).
+GAMER = re.compile(
+    r"\b(gamer|gaming|headset|xbox|playstation|ps4|ps5|nintendo|dualsense|joystick|console|controle sem fio|"
+    r"placa de v[ií]deo|rtx|radeon|geforce|ddr4|ddr5|mem[oó]ria ram|ssd|nvme|water ?cooler|mousepad|"
+    r"teclado mec[aâ]nico|cadeira gamer|hyperx|redragon|razer)\b",
+    re.IGNORECASE,
+)
+
+
+def categoria_final(nome, categoria):
+    return "Gamer" if GAMER.search(nome or "") else (categoria or "Presentes")
 
 
 def _num(valor, padrao=0.0):
@@ -53,7 +66,7 @@ def normalizar(no):
         "link": no.get("offerLink") or no.get("productLink"),
         "loja": no.get("shopName") or "",
         "loja_oficial": _loja_oficial(no.get("shopType")),
-        "categoria": no.get("_categoria") or "Presentes",
+        "categoria": categoria_final(no.get("productName"), no.get("_categoria")),
     }
 
 

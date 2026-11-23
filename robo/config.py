@@ -4,7 +4,7 @@ Tudo o que você pode ajustar sem mexer no resto do código fica aqui.
 """
 
 # Palavras pesquisadas na Shopee a cada rodada (o nicho do canal) e a categoria da vitrine.
-# Categorias da vitrine: Fitness, Casa e cozinha, Escola, Crianças, Moda, Maquiagem e beleza, Tecnologia útil, Presentes.
+# Categorias da vitrine: Fitness, Casa e cozinha, Escola, Crianças, Moda, Maquiagem e beleza, Tecnologia útil, Gamer, Presentes.
 PALAVRAS_CHAVE = {
     "legging fitness": "Fitness",
     "conjunto fitness": "Fitness",
@@ -71,6 +71,12 @@ PALAVRAS_CHAVE = {
     "mochila notebook": "Tecnologia útil",
     "kit perfume": "Presentes",
     "kit cuidados masculino": "Presentes",
+    # Gamer (23/11)
+    "mouse gamer": "Gamer",
+    "headset gamer": "Gamer",
+    "teclado gamer": "Gamer",
+    "controle ps5": "Gamer",
+    "cadeira gamer": "Gamer",
 }
 
 # Vitrine (site): quantas ofertas manter publicadas, quantas entram por rodada e por quantos dias.
