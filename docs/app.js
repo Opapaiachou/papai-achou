@@ -1,5 +1,5 @@
 (function () {
-  var CATEGORIAS = ["Todos", "Fitness", "Casa e cozinha", "Escola", "Crianças", "Moda", "Maquiagem e beleza", "Tecnologia útil", "Presentes"];
+  var CATEGORIAS = ["Todos", "Fitness", "Casa e cozinha", "Escola", "Crianças", "Moda", "Maquiagem e beleza", "Tecnologia útil", "Gamer", "Presentes"];
   var pagina = document.body.getAttribute("data-pagina");
   var cfg = window.PAPAI_ACHOU || {};
   var estado = { ofertas: [], categoria: "Todos", busca: "" };
@@ -72,6 +72,9 @@
   Promise.all([carregar("ofertas.json", "json"), carregar("manuais.csv", "texto")]).then(function (res) {
     var manuais = lerCSV(res[1] || "").map(manualParaOferta).filter(Boolean);
     estado.ofertas = (res[0] || []).concat(manuais);
+    // Produtos gamer (Kabum e outras lojas) ficam na categoria Gamer, mesmo os que já estavam no site.
+    var gamer = /\b(gamer|gaming|headset|xbox|playstation|ps4|ps5|nintendo|dualsense|joystick|console|controle sem fio|placa de v[ií]deo|rtx|radeon|geforce|ddr4|ddr5|mem[oó]ria ram|ssd|nvme|water ?cooler|mousepad|teclado mec[aâ]nico|cadeira gamer|hyperx|redragon|razer)\b/i;
+    estado.ofertas.forEach(function (o) { if (gamer.test(o.nome || "")) o.categoria = "Gamer"; });
     if (pagina === "black-friday") estado.ofertas.sort(function (a, b) { return (b.desconto || 0) - (a.desconto || 0); });
     else estado.ofertas.sort(function (a, b) { return (b.data || "").localeCompare(a.data || ""); });
     montarChips();
