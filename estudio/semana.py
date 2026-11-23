@@ -46,6 +46,15 @@ def foto(url):
 
 
 USADOS = set()
+GENERICOS = {"kit", "jogo", "conjunto", "de", "do", "da", "com", "par", "combo", "c/", "novo", "nova", "original"}
+
+
+def tipo(nome):
+    """Tipo do produto (potes, garrafa, headset...) para não repetir o mesmo tipo no mesmo lote."""
+    for w in nome.lower().split():
+        if w not in GENERICOS and not re.search(r"\d", w):
+            return w.rstrip("s")
+    return nome.lower()
 
 
 def escolher(qtd, categorias=None, termos=None, preco_max=None, min_desc=20):
@@ -75,7 +84,7 @@ def escolher(qtd, categorias=None, termos=None, preco_max=None, min_desc=20):
             if not grupos[k] or len(escolhidos) >= qtd:
                 continue
             o = grupos[k].pop(0)
-            base = " ".join(o["nome"].lower().split()[:3])
+            base = tipo(o["nome"])
             if base in nomes or foto(o["foto"]) is None:
                 continue
             nomes.add(base)
@@ -143,10 +152,22 @@ def selo_desconto(desc, d=210):
     return img.rotate(10, resample=Image.BICUBIC, expand=True)
 
 
+def nome_curto(nome, tam, larg, linhas=2):
+    """Corta o nome para caber em no máximo 2 linhas."""
+    f = m.fonte(tam, "Bold")
+    out = ""
+    for w in nome.replace("*", "").split():
+        t = (out + " " + w).strip()
+        if len(m.quebrar(t, f, larg)) > linhas:
+            return out.rstrip(",;-– ") + "…"
+        out = t
+    return out
+
+
 def bloco_preco(o, larg=900, claro=False):
     """Nome + de/por. claro=True para fundo escuro."""
     corpo = BRANCO if claro else AZUL
-    nome = m.sprite_texto(o["nome"][:70], 48, larg - 20, peso="Bold", cor=corpo, entrelinha=1.1)
+    nome = m.sprite_texto(nome_curto(o["nome"], 48, larg - 20), 48, larg - 20, peso="Bold", cor=corpo, entrelinha=1.1)
     fde, fpor, ff = m.fonte(46, "SemiBold"), m.fonte(108, "Black"), m.fonte(38, "SemiBold")
     de = "de " + moeda(o["preco_antigo"])
     por = moeda(o["preco"])
@@ -247,12 +268,14 @@ def video(arquivo, kicker, gancho, fala_gancho, ofertas, fecho, fala_fecho):
 
 
 # ---------------- lote da semana ----------------
+SEM_GAMER = {"Casa e cozinha", "Moda", "Fitness", "Crianças", "Tecnologia útil", "Maquiagem e beleza", "Presentes", "Escola"}
+
 def dia_23():
     pasta = os.path.join(SAIDA, "post_semana-23-11")
     carrossel(pasta, "BLACK FRIDAY ANTECIPADA", "Caiu de preço *hoje*", "5 achados conferidos pelo Papai",
-              escolher(5), "Tem *300 achados* no site do Papai")
+              escolher(5, categorias=SEM_GAMER), "Tem *300 achados* no site do Papai")
     video(os.path.join(SAIDA_V, "tiktok-" + os.path.basename(pasta)[12:] + ".mp4"), "BLACK FRIDAY ANTECIPADA", "de desconto em achados *de hoje*",
-          "Olha o que o Papai achou hoje!", escolher(3),
+          "Olha o que o Papai achou hoje!", escolher(3, categorias=SEM_GAMER),
           "Mais de *300 achados* no site", ["Tem mais de trezentos achados no site do Papai.", "Link na bio!"])
 
 
