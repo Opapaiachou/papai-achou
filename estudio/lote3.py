@@ -334,7 +334,12 @@ def v04():
 VIDEOS = {"V01": v01, "V02": v02, "V03": v03, "V04": v04}
 
 if __name__ == "__main__":
-    for cod in sys.argv[1:] or VIDEOS:
+    if not sys.argv[1:] or sys.argv[1] == "semana":
+        # sem argumentos: lote da semana com ofertas reais (semana.py)
+        import semana
+        semana.main(sys.argv[2:])
+        sys.exit(0)
+    for cod in sys.argv[1:]:
         rot = VIDEOS[cod]()
         os.makedirs("saida3", exist_ok=True)
         render(rot, f"saida3/{cod}.mp4")
