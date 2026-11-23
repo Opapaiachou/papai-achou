@@ -117,15 +117,15 @@
     var t = document.createElement("p"); t.className = "cupom-titulo"; t.textContent = c.titulo; li.appendChild(t);
     var a = document.createElement("a");
     a.className = "botao violeta"; a.href = c.link; a.target = "_blank"; a.rel = "noopener sponsored";
+    a.textContent = "Comprar";
+    a.setAttribute("aria-label", "Comprar: " + c.titulo + " em " + c.marca);
     if (c.cupom) {
-      var cod = document.createElement("div"); cod.className = "cupom-codigo"; cod.textContent = c.cupom; li.appendChild(cod);
-      a.textContent = "Copiar cupom e ir à loja";
+      // O cupom fica à mostra na promoção; ao tocar em Comprar ele também é copiado.
+      var cod = document.createElement("div"); cod.className = "cupom-codigo"; cod.textContent = "Cupom: " + c.cupom; li.appendChild(cod);
       a.addEventListener("click", function () {
         try { navigator.clipboard.writeText(c.cupom); } catch (e) {}
-        cod.textContent = c.cupom + " ✓ copiado";
+        cod.textContent = "Cupom: " + c.cupom + " ✓ copiado";
       });
-    } else {
-      a.textContent = "Ver promoção";
     }
     li.appendChild(a);
     return li;
