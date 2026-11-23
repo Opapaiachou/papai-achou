@@ -69,7 +69,32 @@
     }).catch(function () { return tipo === "json" ? [] : ""; });
   }
 
-  Promise.all([carregar("ofertas.json", "json"), carregar("manuais.csv", "texto")]).then(function (res) {
+  // Cupons das marcas (docs/cupons.json): o código aparece na descrição do produto a que se refere.
+  // Some sozinho depois da data de validade. Ao tocar em Comprar, o cupom também é copiado.
+  var GENERICAS = /^(off|produtos?|selecionad[oa]s?|campanha|participantes|marca|maga|na|no|nos|nas|em|da|de|do|dos|das|com|e|a|o|r|para|lista|leve|pague)$/;
+  var cupons = [];
+  function palavras(t) { return semAcento(t).replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter(function (w) { return w.length > 1 && !/^\d+$/.test(w) && !GENERICAS.test(w); }); }
+  function cupomDo(o) {
+    var nome = " " + palavras(o.nome).join(" ") + " ";
+    for (var i = 0; i < cupons.length; i++) {
+      var c = cupons[i];
+      if (c.marca !== o.plataforma) continue;
+      var achou = c.palavras.filter(function (w) { return nome.indexOf(" " + w + " ") >= 0; }).length;
+      // Se o cupom cita um modelo (ex.: L4360, DDR4), o produto precisa ter esse modelo no nome.
+      var modelos = c.palavras.filter(function (w) { return /\d/.test(w) && /[a-z]/.test(w) && !/^\d+(v|gb|tb|mhz|hz|cm|mm|ml|w)$/.test(w); });
+      var temModelo = !modelos.length || modelos.some(function (w) { return nome.indexOf(" " + w + " ") >= 0; });
+      if (achou && temModelo && achou >= Math.min(3, c.palavras.length)) return c;
+    }
+    return null;
+  }
+  var pedidoCupons = carregar("cupons.json", "json").then(function (lista) {
+    var hoje = new Date().toISOString().slice(0, 10);
+    cupons = (lista || []).filter(function (c) { return c.cupom && (!c.ate || c.ate >= hoje); })
+      .map(function (c) { c.palavras = palavras(c.titulo.replace(/^.*?\b(OFF|off)\b/, "")); return c; })
+      .filter(function (c) { return c.palavras.length; });
+  });
+
+  Promise.all([carregar("ofertas.json", "json"), carregar("manuais.csv", "texto"), pedidoCupons]).then(function (res) {
     var manuais = lerCSV(res[1] || "").map(manualParaOferta).filter(Boolean);
     estado.ofertas = (res[0] || []).concat(manuais);
     // Produtos gamer (Kabum e outras lojas) ficam na categoria Gamer, mesmo os que já estavam no site.
@@ -97,42 +122,6 @@
   }
 
   if (busca) busca.addEventListener("input", function () { estado.busca = semAcento(busca.value); desenhar(); });
-
-  // Cupons e promoções das marcas (docs/cupons.json). Some sozinho depois da data de validade.
-  var caixaCupons = document.getElementById("lista-cupons");
-  if (caixaCupons) {
-    carregar("cupons.json", "json").then(function (lista) {
-      var hoje = new Date().toISOString().slice(0, 10);
-      var validos = (lista || []).filter(function (c) { return !c.ate || c.ate >= hoje; });
-      if (pagina === "black-friday") validos.sort(function (a, b) { return (a.ate || "").localeCompare(b.ate || ""); });
-      validos = intercalar(validos.map(function (c) { c.plataforma = c.marca; return c; }));
-      if (!validos.length) { document.getElementById("cupons").hidden = true; return; }
-      validos.forEach(function (c) { caixaCupons.appendChild(cartaoCupom(c)); });
-    });
-  }
-
-  function cartaoCupom(c) {
-    var li = document.createElement("li"); li.className = "cupom";
-    var topo = document.createElement("div"); topo.className = "cupom-topo";
-    var marca = document.createElement("span"); marca.className = "cupom-marca"; marca.textContent = c.marca;
-    var ate = document.createElement("span"); ate.className = "cupom-ate"; ate.textContent = c.ate ? "até " + dataCurta(c.ate) : "";
-    topo.appendChild(marca); topo.appendChild(ate); li.appendChild(topo);
-    var t = document.createElement("p"); t.className = "cupom-titulo"; t.textContent = c.titulo; li.appendChild(t);
-    var a = document.createElement("a");
-    a.className = "botao violeta"; a.href = c.link; a.target = "_blank"; a.rel = "noopener sponsored";
-    a.textContent = "Comprar";
-    a.setAttribute("aria-label", "Comprar: " + c.titulo + " em " + c.marca);
-    if (c.cupom) {
-      // O cupom fica à mostra na promoção; ao tocar em Comprar ele também é copiado.
-      var cod = document.createElement("div"); cod.className = "cupom-codigo"; cod.textContent = "Cupom: " + c.cupom; li.appendChild(cod);
-      a.addEventListener("click", function () {
-        try { navigator.clipboard.writeText(c.cupom); } catch (e) {}
-        cod.textContent = "Cupom: " + c.cupom + " ✓ copiado";
-      });
-    }
-    li.appendChild(a);
-    return li;
-  }
 
   function cartao(o) {
     var li = document.createElement("li"); li.className = "cartao";
@@ -164,11 +153,22 @@
     if (o.data) partes.push("achado em " + dataCurta(o.data));
     det.textContent = partes.join(" · ");
     info.appendChild(det);
+    var cp = cupomDo(o);
+    if (cp) {
+      var cod = document.createElement("p"); cod.className = "cupom-produto";
+      cod.style.cssText = "margin:.25rem 0 .5rem;font-size:.85rem;font-weight:700;color:#5B2EFF";
+      cod.textContent = "🎟️ Use o cupom " + cp.cupom + (cp.ate ? " (até " + dataCurta(cp.ate) + ")" : "");
+      info.appendChild(cod);
+    }
     var a = document.createElement("a");
     a.className = "botao violeta"; a.href = o.link; a.target = "_blank"; a.rel = "noopener sponsored";
     var loja = o.plataforma || "Shopee";
     a.textContent = "Comprar";
     a.setAttribute("aria-label", "Comprar " + o.nome + " em " + loja);
+    if (cp) a.addEventListener("click", function () {
+      try { navigator.clipboard.writeText(cp.cupom); } catch (e) {}
+      cod.textContent = "🎟️ Cupom " + cp.cupom + " copiado ✓";
+    });
     info.appendChild(a);
     li.appendChild(info);
     return li;
