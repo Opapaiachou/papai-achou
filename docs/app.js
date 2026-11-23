@@ -139,8 +139,9 @@
     var s = document.createElement("span"); s.className = "sem-foto"; s.textContent = "papai achou"; el.insertBefore(s, el.firstChild);
   }
 
-  // Mistura as lojas: cada loja fica espalhada por toda a vitrine, na proporção do que ela tem,
-  // em vez de aparecer vários produtos da mesma loja em sequência. A ordem de cada loja é mantida.
+  // Rodízio entre as lojas/marcas: um produto de cada loja por vez (Magalu, Mercado Livre, Nike,
+  // Shopee, Kabum...), para a vitrine ficar variada. Quando uma loja acaba, as outras continuam o rodízio.
+  // Dentro de cada loja, vem primeiro o maior desconto entre os achados mais recentes.
   function intercalar(lista) {
     var grupos = {}, ordem = [];
     lista.forEach(function (o) {
@@ -148,13 +149,23 @@
       if (!grupos[k]) { grupos[k] = []; ordem.push(k); }
       grupos[k].push(o);
     });
-    var marcados = [];
-    ordem.forEach(function (k, g) {
-      var n = grupos[k].length;
-      grupos[k].forEach(function (o, i) { marcados.push({ o: o, pos: (i + 0.5) / n, g: g }); });
+    // Lojas com menos produtos entram primeiro na roda, para aparecerem logo no topo.
+    ordem.sort(function (a, b) { return grupos[a].length - grupos[b].length; });
+    ordem.forEach(function (k) {
+      grupos[k].sort(function (a, b) {
+        var porDesconto = (b.desconto || 0) - (a.desconto || 0);
+        if (pagina === "black-friday") return porDesconto;  // na Black Friday, maior desconto primeiro
+        return (b.data || "").slice(0, 10).localeCompare((a.data || "").slice(0, 10)) || porDesconto;
+      });
     });
-    marcados.sort(function (a, b) { return a.pos - b.pos || a.g - b.g; });
-    return marcados.map(function (m) { return m.o; });
+    var resultado = [], resta = true;
+    while (resta) {
+      resta = false;
+      ordem.forEach(function (k) {
+        if (grupos[k].length) { resultado.push(grupos[k].shift()); resta = true; }
+      });
+    }
+    return resultado;
   }
 
   function desenhar() {
