@@ -306,12 +306,19 @@ def dia_26():
           "Amanhã o site *atualiza o dia todo*", ["Amanhã o site do Papai atualiza o dia todo.", "Link na bio!"])
 
 
-LOTE = {"23-11": dia_23, "24-11": dia_24, "25-11": dia_25, "26-11": dia_26}
+def atracao():
+    import atracao as a
+    a.gerar()
+
+
+LOTE = {"23-11": dia_23, "24-11": dia_24, "25-11": dia_25, "26-11": dia_26, "atracao": atracao}
+PADRAO = ["atracao"]  # o que o workflow renderiza a cada push (os dias 23 a 26 já foram publicados)
+
 
 def main(dias=None):
     os.chdir(AQUI)
     os.makedirs(SAIDA_V, exist_ok=True)
-    for d in dias or LOTE:
+    for d in dias or PADRAO:
         LOTE[d]()
     print("ok semana")
 
