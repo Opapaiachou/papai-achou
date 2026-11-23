@@ -13,6 +13,41 @@ CATS = [("Casa e cozinha", "Casa"), ("Fitness", "Fitness"), ("Escola", "Escola")
         ("Maquiagem e beleza", "Beleza"), ("Tecnologia útil", "Tecnologia"), ("Gamer", "Gamer"),
         ("Crianças", "Crianças"), ("Presentes", "Presentes")]
 HORAS = ["7h", "10h", "13h", "16h", "19h", "22h"]
+# marcas conhecidas: só aparecem no vídeo as que estão de fato em produtos do site
+MARCAS = ["Samsung", "JBL", "Tramontina", "Mondial", "Olympikus", "Mizuno", "Philco", "Motorola", "Lenovo",
+          "Logitech", "Redragon", "Puma", "Under Armour", "Fila", "Oster", "Philips", "LG", "Multilaser", "Casio"]
+# para a foto de cada categoria ser um produto típico dela
+DICA = {"Escola": r"escol|estojo|lancheira|caderno", "Fitness": r"t[eê]nis|legging|garrafa|whey|creatina|academia",
+        "Casa e cozinha": r"panela|pote|air fryer|fritadeira|jogo de cama|garrafa", "Gamer": r"headset|teclado|mouse"}
+
+
+def marcas_no_site(ofs):
+    import re
+    achadas = []
+    for mk in MARCAS:
+        if any(re.search(r"\b" + re.escape(mk) + r"\b", o["nome"], re.I) for o in ofs):
+            achadas.append(mk)
+    return achadas[:10]
+
+
+class ContaAte(El):
+    """Número que sobe de 0 até o valor (com +), e depois pulsa."""
+    def __init__(self, valor, x, y, t0, dur=1.1, tam=330, sfx="ding"):
+        self.valor, self.x, self.y, self.t0, self.dur, self.tam, self.sfx = valor, x, y, t0, dur, tam, sfx
+        self.cache = {}
+
+    def draw(self, cam, t):
+        p = (t - self.t0) / self.dur
+        if p <= 0:
+            return
+        v = int(round(self.valor * ease_out(min(1, p)) / 10) * 10) if p < 1 else self.valor
+        if v not in self.cache:
+            self.cache[v] = numero_grande(f"+{v}", tam=self.tam)
+        img = self.cache[v]
+        if p >= 1:
+            sc = 1 + 0.025 * abs(__import__("math").sin((t - self.t0) * 4))
+            img = img.resize((int(img.width * sc), int(img.height * sc)))
+        cam.alpha_composite(img, (self.x, self.y))
 
 
 def ofertas():
@@ -20,8 +55,12 @@ def ofertas():
 
 
 def melhor_da_categoria(ofs, cat):
-    cands = sorted([o for o in ofs if o.get("categoria") == cat and o.get("foto")],
-                   key=lambda o: -(o.get("desconto") or 0))
+    import re
+    cands = [o for o in ofs if o.get("categoria") == cat and o.get("foto")]
+    if cat in DICA:
+        tipicos = [o for o in cands if re.search(DICA[cat], o["nome"], re.I)]
+        cands = tipicos or cands
+    cands.sort(key=lambda o: -(o.get("desconto") or 0))
     for o in cands[:8]:
         if s.foto(o["foto"]) is not None:
             return o
@@ -126,25 +165,42 @@ def gerar():
     # 1. Gancho: número de achados
     def hook(c, ts, ini, fim):
         y = gancho_kicker(c, "O SITE DO PAPAI ACHOU", ini, 330)
-        c.add(Pop(numero_grande(f"+{redondo}", tam=330), 60, y, ini + 0.3, 0.45, 0.2, pulsa=0.02, sfx="ding"))
+        c.add(ContaAte(redondo, 60, y, ini + 0.3))
         els, h = palavras("achados com *preço conferido*", 100, 920, 80, y + 410, ts[0] + 0.9)
         c.add(els)
     r.cena(["Cansou de caçar promoção?", f"O Papai já achou mais de {s.extenso(redondo)} pra você."],
            None, BAIXO, hook, cauda=0.4)
 
     # 2. Lojas: direto das marcas e grandes lojas
+    marcas = marcas_no_site(ofs)
+
     def lojas_cena(c, ts, ini, fim):
-        els, h = palavras("Direto das *marcas* e das *maiores lojas*", 92, 920, 80, 300, ts[0])
+        els, h = palavras("Direto das *marcas* e das *maiores lojas*", 88, 920, 80, 280, ts[0])
         c.add(els)
-        y0 = 300 + h + 50
-        passo = (fim - ts[0] - 1.0) / max(1, len(lojas))
+        y0 = 280 + h + 40
+        passo = (ts[2] - ts[1]) / max(1, len(lojas))
         for i, nome in enumerate(lojas):
-            pil = m.sprite_pilula(nome, 64, fundo=BRANCO if i % 2 else LIMAO, cor=AZUL, peso="Black", pad=(44, 22))
+            pil = m.sprite_pilula(nome, 60, fundo=BRANCO if i % 2 else LIMAO, cor=AZUL, peso="Black", pad=(40, 20))
             x = 80 if i % 2 == 0 else 1000 - pil.width
-            c.add(Pop(pil, x, y0 + (i // 2) * 170, ts[0] + 0.6 + i * passo, 0.35, 0.3, rot=(8 if i % 2 else -8)))
+            c.add(Pop(pil, x, y0 + (i // 2) * 150, ts[1] + i * passo, 0.35, 0.3, rot=(8 if i % 2 else -8)))
+        # segunda onda: marcas que estão nos produtos do site, em pílulas menores (fluxo)
+        x, y = 80, y0 + 3 * 150 + 20
+        passo = (fim - ts[2] - 0.8) / max(1, len(marcas) + 1)
+        for i, mk in enumerate(marcas + ["+ MUITO MAIS"]):
+            ult = mk.startswith("+")
+            pil = m.sprite_pilula(mk, 44 if not ult else 50, fundo=LIMAO if ult else VIOLETA,
+                                  cor=AZUL if ult else BRANCO, peso="Black" if ult else "Bold", pad=(28, 14))
+            if x + pil.width > 1000:
+                x, y = 80, y + pil.height + 22
+            c.add(Pop(pil, x, y, ts[2] + 0.3 + i * passo, 0.3, 0.3, sfx="pop" if ult or i % 2 == 0 else None))
+            x += pil.width + 20
+    falas_marcas = {"Samsung": "sâmsung", "JBL": "jota bê éle", "Olympikus": "olímpikus", "Philco": "fílco",
+                    "Logitech": "lójitec", "Under Armour": "ânder ármor", "Puma": "puma", "LG": "éle gê"}
+    ditas = ", ".join(falas_marcas.get(mk, mk.lower()) for mk in marcas[:5])
     falas_lojas = ["Tudo direto das marcas e das maiores lojas do Brasil:",
-                   "Náiqui, adidas, Kabum, Magalu e Mercado Livre."]
-    r.cena(falas_lojas, "swipe", BAIXO, lojas_cena, cauda=0.5)
+                   "Náiqui, adidas, Kabum, Magalu e Mercado Livre.",
+                   f"Tem {ditas}, e muito mais marcas!"]
+    r.cena(falas_lojas, "swipe", BAIXO, lojas_cena, cauda=0.8)
 
     # 3. Categorias com fotos reais
     def cats_cena(c, ts, ini, fim):
