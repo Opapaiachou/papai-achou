@@ -2,6 +2,11 @@
   // Central de Postagem: leva as ofertas do robô para o Canal do WhatsApp em 2 toques,
   // pela tela de compartilhar do celular (caminho oficial, sem automação no WhatsApp).
   var CHAVE_FEITOS = "papaiAchouPostados";
+  // O WhatsApp não mostra Canais na tela de compartilhar de outros apps. Por isso o botão principal
+  // copia o texto, salva a foto no celular e abre o Canal: lá é só anexar a última foto e colar.
+  var CANAL = "https://whatsapp.com/channel/0029Vb9k12lICVfgIsD2LN0r";
+  var IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  var fotosProntas = {};
   var feitos = {};
   try { feitos = JSON.parse(localStorage.getItem(CHAVE_FEITOS) || "{}"); } catch (e) { feitos = {}; }
   var estado = { ofertas: [], filtro: "pendentes" };
@@ -28,12 +33,52 @@
   function baixarFoto(o) {
     var url = o.foto_post || o.foto;
     if (!url) return Promise.resolve(null);
+    if (fotosProntas[o.chave]) return Promise.resolve(fotosProntas[o.chave]);
     return fetch(url, { cache: "force-cache" }).then(function (r) {
       if (!r.ok) throw new Error("foto");
       return r.blob();
     }).then(function (b) {
-      return new File([b], "papai-achou.jpg", { type: b.type && b.type.indexOf("image") === 0 ? b.type : "image/jpeg" });
+      var arq = new File([b], "papai-achou.jpg", { type: b.type && b.type.indexOf("image") === 0 ? b.type : "image/jpeg" });
+      fotosProntas[o.chave] = arq;
+      return arq;
     }).catch(function () { return null; });
+  }
+
+  function abrirCanal() { setTimeout(function () { location.href = CANAL; }, 900); }
+
+  // Botão principal: copia o texto, guarda a foto no celular e abre o Canal.
+  function prepararCanal(o, botao) {
+    var texto = o.post || o.nome;
+    copiar(texto);  // copia já no toque (o celular só deixa copiar durante o toque)
+    var pronta = fotosProntas[o.chave];
+    if (IOS && pronta && navigator.share && navigator.canShare && navigator.canShare({ files: [pronta] })) {
+      // iPhone: abre o compartilhar só com a foto; toque em "Salvar Imagem" e o Canal abre em seguida.
+      navigator.share({ files: [pronta] }).then(function () {
+        marcar(o, true); aviso("Foto salva e texto copiado. Abrindo o Canal…"); abrirCanal();
+      }).catch(function (erro) {
+        if (erro && erro.name === "AbortError") return;
+        aviso("Texto copiado. Use Baixar foto e depois abra o Canal.");
+      });
+      return;
+    }
+    botao.disabled = true; botao.textContent = "Salvando a foto…";
+    baixarFoto(o).then(function (arquivo) {
+      if (IOS && arquivo) {  // no iPhone o compartilhar precisa de um toque novo depois de baixar
+        botao.disabled = false; botao.textContent = "✅ Foto pronta: toque de novo";
+        return;
+      }
+      if (arquivo) {
+        var link = document.createElement("a");
+        link.href = URL.createObjectURL(arquivo); link.download = "papai-achou-" + Date.now() + ".jpg";
+        document.body.appendChild(link); link.click(); link.remove();
+        setTimeout(function () { URL.revokeObjectURL(link.href); }, 5000);
+      }
+      marcar(o, true);
+      aviso(arquivo ? "Foto salva e texto copiado. Abrindo o Canal…" : "Texto copiado. Abrindo o Canal…");
+      abrirCanal();
+    }).finally(function () {
+      if (botao.textContent === "Salvando a foto…") { botao.disabled = false; botao.textContent = "📲 Postar no Canal"; }
+    });
   }
 
   function postar(o, botao) {
@@ -53,7 +98,7 @@
         if (erro && erro.name === "AbortError") return;
         aviso("Não abriu o compartilhar. O texto já está copiado.");
       });
-    }).finally(function () { botao.disabled = false; botao.textContent = "📲 Postar no Canal"; });
+    }).finally(function () { botao.disabled = false; botao.textContent = "Enviar numa conversa"; });
   }
 
   function cartao(o) {
@@ -76,8 +121,11 @@
 
     var acoes = document.createElement("div"); acoes.className = "acoes";
     var b = document.createElement("button"); b.type = "button"; b.className = "botao principal"; b.textContent = "📲 Postar no Canal";
-    b.addEventListener("click", function () { postar(o, b); });
+    b.addEventListener("click", function () { prepararCanal(o, b); });
     acoes.appendChild(b);
+    var z = document.createElement("button"); z.type = "button"; z.className = "botao mini"; z.textContent = "Enviar numa conversa";
+    z.addEventListener("click", function () { postar(o, z); });
+    acoes.appendChild(z);
     var c = document.createElement("button"); c.type = "button"; c.className = "botao mini"; c.textContent = "Copiar texto";
     c.addEventListener("click", function () { copiar(o.post || o.nome).then(function () { aviso("Texto copiado."); }); });
     acoes.appendChild(c);
@@ -123,7 +171,11 @@
     if (!alvo) return;
     var el = document.getElementById("o-" + encodeURIComponent(alvo));
     if (!el && estado.filtro !== "todas") { estado.filtro = "todas"; return desenhar(); }
-    if (el) { el.classList.add("destaque"); el.scrollIntoView({ block: "center" }); }
+    if (el) {
+      el.classList.add("destaque"); el.scrollIntoView({ block: "center" });
+      var o = estado.ofertas.filter(function (x) { return x.chave === alvo; })[0];
+      if (o) baixarFoto(o);  // já deixa a foto pronta para o toque
+    }
     else if (estado.ofertas.length && !destacar.avisou) {
       destacar.avisou = true;  // o robô manda no Telegram antes de o site atualizar (leva 1 a 2 minutos)
       aviso("Essa oferta ainda está chegando no site. Atualize a página em 2 minutinhos.");
