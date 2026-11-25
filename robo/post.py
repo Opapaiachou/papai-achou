@@ -29,7 +29,8 @@ def _forma(oferta):
 ONDE = {"Magalu": "Agora, no Magalu!", "Mercado Livre": "Agora, no Mercado Livre!", "Shopee": "Agora, na Shopee!",
         "Amazon": "Agora, na Amazon!", "Kabum": "Agora, na KaBuM!", "KaBuM": "Agora, na KaBuM!",
         "Dafiti": "Agora, na Dafiti!"}
-CHAMADA_SITE = "🛍️ Para mais ofertas acesse o site: www.opapaiachou.com.br"
+# /zap leva ao site com utm_source=whatsapp (docs/zap/index.html), para o Analytics contar o Canal.
+CHAMADA_SITE = "🛍️ Para mais ofertas acesse o site: www.opapaiachou.com.br/zap"
 
 
 def _moeda_curta(valor):
