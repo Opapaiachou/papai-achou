@@ -141,17 +141,53 @@
     return li;
   }
 
-  var FILTROS = [["pendentes", "Para postar"], ["todas", "Todas"], ["Magalu", "Magalu"], ["Mercado Livre", "Mercado Livre"], ["Shopee", "Shopee"]];
-  FILTROS.forEach(function (par) {
-    var bt = document.createElement("button"); bt.type = "button"; bt.className = "chip"; bt.textContent = par[1];
-    bt.setAttribute("aria-pressed", par[0] === estado.filtro ? "true" : "false");
-    bt.addEventListener("click", function () {
-      estado.filtro = par[0];
-      chips.querySelectorAll(".chip").forEach(function (x) { x.setAttribute("aria-pressed", x === bt ? "true" : "false"); });
-      desenhar();
+  // Filtros: "Para postar", "Todas" e uma por loja que existir nas ofertas (com a quantidade).
+  function montarFiltros() {
+    var porLoja = {};
+    estado.ofertas.forEach(function (o) { var l = o.plataforma || "Shopee"; porLoja[l] = (porLoja[l] || 0) + 1; });
+    var lojas = Object.keys(porLoja).sort(function (a, b) { return porLoja[b] - porLoja[a]; });
+    var filtros = [["pendentes", "Para postar"], ["todas", "Todas (" + estado.ofertas.length + ")"]]
+      .concat(lojas.map(function (l) { return [l, l + " (" + porLoja[l] + ")"]; }));
+    chips.innerHTML = "";
+    filtros.forEach(function (par) {
+      var bt = document.createElement("button"); bt.type = "button"; bt.className = "chip"; bt.textContent = par[1];
+      bt.setAttribute("aria-pressed", par[0] === estado.filtro ? "true" : "false");
+      bt.addEventListener("click", function () {
+        estado.filtro = par[0];
+        chips.querySelectorAll(".chip").forEach(function (x) { x.setAttribute("aria-pressed", x === bt ? "true" : "false"); });
+        desenhar();
+      });
+      chips.appendChild(bt);
     });
-    chips.appendChild(bt);
-  });
+  }
+
+  // Mistura (cross) de produtos: os melhores primeiro, sem a mesma loja em sequência (quando houver
+  // outra) e sem repetir a categoria dos últimos 3 cards. Mesma ideia da vitrine do site.
+  function pontos(o) {
+    var p = Math.min(o.desconto || 0, 60);
+    if (o.nota) p += (o.nota - 4) * 20;
+    var prova = (o.avaliacoes || 0) + (o.vendas || 0);
+    if (prova) p += Math.min(Math.log10(prova) * 5, 15);
+    var dias = o.data ? (Date.now() - new Date(o.data).getTime()) / 864e5 : 3;
+    return p - Math.max(dias, 0) * 6;
+  }
+  function misturar(lista) {
+    var fila = lista.slice().sort(function (a, b) { return pontos(b) - pontos(a); }), resultado = [];
+    function loja(o) { return o.plataforma || "Shopee"; }
+    while (fila.length) {
+      var ant = resultado[resultado.length - 1], rc = resultado.slice(-3), melhor = 0, nota = -1e9;
+      var temOutra = ant && fila.some(function (o) { return loja(o) !== loja(ant); });
+      for (var j = 0; j < fila.length; j++) {
+        var c = fila[j];
+        if (temOutra && loja(c) === loja(ant)) continue;
+        var v = -j;
+        rc.forEach(function (r) { if (r.categoria === c.categoria) v -= 40; });
+        if (v > nota) { nota = v; melhor = j; }
+      }
+      resultado.push(fila.splice(melhor, 1)[0]);
+    }
+    return resultado;
+  }
 
   function desenhar() {
     var itens = estado.ofertas.filter(function (o) {
@@ -162,7 +198,7 @@
     contagem.textContent = itens.length + (itens.length === 1 ? " oferta" : " ofertas") +
       " · " + Object.keys(feitos).length + " já postadas neste celular";
     lista.innerHTML = "";
-    itens.forEach(function (o) { lista.appendChild(cartao(o)); });
+    misturar(itens).forEach(function (o) { lista.appendChild(cartao(o)); });
     destacar();
   }
 
@@ -170,7 +206,7 @@
     var alvo = decodeURIComponent((location.hash || "").slice(1));
     if (!alvo) return;
     var el = document.getElementById("o-" + encodeURIComponent(alvo));
-    if (!el && estado.filtro !== "todas") { estado.filtro = "todas"; return desenhar(); }
+    if (!el && estado.filtro !== "todas") { estado.filtro = "todas"; montarFiltros(); return desenhar(); }
     if (el) {
       el.classList.add("destaque"); el.scrollIntoView({ block: "center" });
       var o = estado.ofertas.filter(function (x) { return x.chave === alvo; })[0];
@@ -184,7 +220,8 @@
   window.addEventListener("hashchange", desenhar);
 
   fetch("ofertas.json", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (dados) {
-    estado.ofertas = (dados || []).sort(function (a, b) { return (b.data || "").localeCompare(a.data || ""); });
+    estado.ofertas = dados || [];
+    montarFiltros();
     desenhar();
   }).catch(function () { contagem.textContent = "Não consegui carregar as ofertas. Tente de novo em instantes."; });
 })();
