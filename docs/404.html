@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Papai Achou | Achadinhos e ofertas conferidas</title>
+<meta property="og:site_name" content="Papai Achou">
+<meta property="og:title" content="Papai Achou | Achado conferido por um pai">
+<meta property="og:description" content="Toque para ver a oferta. Achados com preço conferido, todo dia.">
+<meta property="og:image" content="https://opapaiachou.com.br/img/compartilhar.png">
+<meta name="theme-color" content="#5B2EFF">
+<link rel="icon" href="/img/icone.png">
+<!-- Google tag (Google Analytics) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XDB9LPF2DB"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XDB9LPF2DB');
+</script>
+<style>
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;background:#5B2EFF;color:#fff;text-align:center;padding:24px;box-sizing:border-box}
+.caixa{max-width:420px}
+img{width:96px;height:96px;border-radius:50%;border:4px solid #C6F432;background:#fff}
+h1{font-size:22px;margin:16px 0 8px}
+p{font-size:16px;line-height:1.5;margin:0 0 16px}
+a.botao{display:inline-block;background:#C6F432;color:#1A0B5C;font-weight:800;text-decoration:none;padding:14px 22px;border-radius:999px}
+</style>
+</head>
+<body>
+<div class="caixa">
+<img src="/img/mascote.png" alt="Papai Achou">
+<h1 id="titulo">Abrindo a oferta do Papai Achou…</h1>
+<p id="texto">Só um instante.</p>
+<p id="acao"></p>
+</div>
+<script>
+// Links curtos /o/<código>: acha o link de afiliado e leva a pessoa para a loja.
+// Qualquer outro endereço que não existe volta para a página inicial.
+(function () {
+  var m = location.pathname.match(/^\/o\/([0-9a-z]{4,10})\/?$/i);
+  var titulo = document.getElementById("titulo"), texto = document.getElementById("texto"), acao = document.getElementById("acao");
+  if (!m) {
+    titulo.textContent = "Essa página não existe";
+    texto.textContent = "Mas os achados de hoje estão aqui 👇";
+    acao.innerHTML = '<a class="botao" href="/">Ver os achados</a>';
+    return;
+  }
+  var cod = m[1].toLowerCase(), tentativas = 0, foi = false;
+  function ir(d) {
+    titulo.textContent = "Abrindo a oferta" + (d.loja ? " (" + d.loja + ")" : "") + "…";
+    texto.textContent = d.nome || "";
+    acao.innerHTML = '<a class="botao" rel="sponsored nofollow" href="' + d.link.replace(/"/g, "&quot;") + '">Toque aqui se não abrir</a>';
+    function seguir() { if (!foi) { foi = true; location.replace(d.link); } }
+    try {
+      gtag("event", "clique_oferta", { codigo: cod, loja: d.loja || "", produto: (d.nome || "").slice(0, 90),
+        value: Number(d.preco) || 0, currency: "BRL", event_callback: seguir, event_timeout: 700 });
+    } catch (e) {}
+    setTimeout(seguir, 800);
+  }
+  function json(url) { return fetch(url, { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }); }
+  function procurar() {
+    tentativas++;
+    json("/ofertas.json").then(function (lista) {
+      var o = (lista || []).filter(function (x) { return x.curto === cod; })[0];
+      if (o) return ir({ link: o.link, loja: o.plataforma, nome: o.nome, preco: o.preco });
+      return json("https://raw.githubusercontent.com/Opapaiachou/papai-achou/main/dados/links_curtos.json?" + Date.now()).then(function (reg) {
+        if (reg && reg[cod]) return ir(reg[cod]);
+        if (tentativas < 8) { setTimeout(procurar, 15000); return; }  // oferta acabou de sair do robô: o site leva 1-2 min
+        titulo.textContent = "Essa oferta já acabou";
+        texto.textContent = "O preço mudou ou o estoque esgotou. Mas tem muito achado novo aqui 👇";
+        acao.innerHTML = '<a class="botao" href="/?utm_source=link_curto&utm_medium=expirado">Ver os achados de hoje</a>';
+      });
+    });
+  }
+  procurar();
+})();
+</script>
+</body>
+</html>

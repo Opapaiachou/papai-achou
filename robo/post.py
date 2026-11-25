@@ -4,7 +4,7 @@ import html
 import re
 from urllib.parse import quote
 
-from robo import regras
+from robo import links, regras
 
 
 def _moeda(valor):
@@ -60,7 +60,7 @@ def texto_canal(oferta):
     if oferta.get("preco_antigo"):
         linhas.append(f"De ~{_moeda_curta(oferta['preco_antigo'])}~")
     linhas += [f"Por *{_moeda_curta(oferta['preco'])}* 🔥{_forma(oferta)}", ""]
-    linhas += ["👉 *Pegar promoção:*", oferta["link"], ""]
+    linhas += ["👉 *Pegar promoção:*", links.url(oferta), ""]  # link curto no domínio do Papai Achou
     plataforma = oferta.get("plataforma") or "Shopee"
     linhas.append(ONDE.get(plataforma, f"Loja oficial {plataforma}!"))
     if regras.eh_suplemento(oferta["nome"]):

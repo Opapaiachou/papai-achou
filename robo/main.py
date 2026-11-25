@@ -14,7 +14,7 @@ import sys
 
 import requests
 
-from robo import awin, config, curadoria, historico, magalu, planilha, post, shopee, telegram, vitrine
+from robo import awin, config, curadoria, historico, links, magalu, planilha, post, shopee, telegram, vitrine
 
 PASTA = os.path.dirname(os.path.dirname(__file__))
 
@@ -116,6 +116,8 @@ def rodada(demo=False, teste=False, de_planilha=False):
         return escolhidas
 
     token, chat_id = _variavel("TELEGRAM_TOKEN"), _variavel("TELEGRAM_CHAT_ID")
+    if not teste:
+        links.gerar(escolhidas)  # garante o link curto de cada oferta que vai para o Telegram
     if teste:
         telegram.enviar_texto(token, chat_id, "🧪 <b>Teste do robô Papai Achou</b>\nProdutos de exemplo, links falsos. Se você está lendo isto, o envio está funcionando.")
         telegram.enviar_texto(token, chat_id, post.INSTRUCOES_WHATSAPP)

@@ -4,7 +4,7 @@ import json
 import os
 from datetime import datetime, timedelta, timezone
 
-from robo import awin, config, curadoria, fotos, post, semelhanca
+from robo import awin, config, curadoria, fotos, links, post, semelhanca
 
 ARQUIVO = os.path.join(os.path.dirname(os.path.dirname(__file__)), "docs", "ofertas.json")
 CAMPOS = ("chave", "preco", "preco_antigo", "desconto", "nota", "vendas", "avaliacoes", "forma_preco", "categoria", "loja",
@@ -49,9 +49,11 @@ def atualizar(escolhidas, arquivo=ARQUIVO, agora=None):
     # Central de Postagem: cada oferta com o post pronto e uma foto que o celular consegue baixar.
     for item in lista:
         item["post"] = post.texto_canal(item)  # sempre no modelo atual, inclusive os achados antigos
+        item["curto"] = links.codigo(item["chave"])  # /o/<código> no site
         if not item.get("foto_post"):
             item["foto_post"] = fotos.garantir(item["chave"], item.get("foto"))
     fotos.limpar(o["chave"] for o in lista)
+    links.gerar(lista)  # códigos dos links curtos opapaiachou.com.br/o/... (dados/links_curtos.json)
 
     os.makedirs(os.path.dirname(arquivo), exist_ok=True)
     with open(arquivo, "w", encoding="utf-8") as f:
