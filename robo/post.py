@@ -25,33 +25,46 @@ def _forma(oferta):
     return f" {forma}" if forma.lower().startswith("no ") else ""
 
 
+# Onde a oferta está, no fim do post (como "Agora, na Amazon!").
+ONDE = {"Magalu": "Agora, no Magalu!", "Mercado Livre": "Agora, no Mercado Livre!", "Shopee": "Agora, na Shopee!",
+        "Amazon": "Agora, na Amazon!", "Kabum": "Agora, na KaBuM!", "KaBuM": "Agora, na KaBuM!",
+        "Dafiti": "Agora, na Dafiti!"}
+CHAMADA_SITE = "🛍️ Para mais ofertas acesse o site: www.opapaiachou.com.br"
+
+
+def _moeda_curta(valor):
+    """R$159 ou R$252,97 (sem espaço e sem ,00, como nos canais de ofertas)."""
+    texto = f"{valor:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    return "R$" + (texto[:-3] if texto.endswith(",00") else texto)
+
+
+def _nome_curto(nome, limite=60):
+    """Nome direto: sem código HTML, sem ™/®, cortado numa vírgula ou palavra inteira."""
+    nome = _limpar_nome(html.unescape(nome or ""), limite=200).replace("™", "").replace("®", "").rstrip("…").strip()
+    if len(nome) <= limite:
+        return nome
+    corte = max(nome.rfind(", ", 0, limite), nome.rfind(" - ", 0, limite))
+    if corte >= 25:
+        return nome[:corte].strip()
+    return nome[:limite].rsplit(" ", 1)[0].rstrip(" ,-|")
+
+
 def texto_canal(oferta):
-    """Texto pronto para colar no canal (WhatsApp e Telegram aceitam *negrito* e ~riscado~)."""
-    linhas = [f"🔥 *{_limpar_nome(oferta['nome'])}*", ""]
+    """Post no padrão dos canais de ofertas (WhatsApp e Telegram aceitam *negrito*, _itálico_ e ~riscado~)."""
+    linhas = []
+    desconto = oferta.get("desconto") or 0
+    if desconto >= 40:
+        linhas += [f"🚨 *{desconto:.0f}% OFF!*", ""]
+    linhas += [f"*{_nome_curto(oferta['nome'])}*", ""]
     if oferta.get("preco_antigo"):
-        linhas.append(f"De ~{_moeda(oferta['preco_antigo'])}~ por *{_moeda(oferta['preco'])}*{_forma(oferta)}")
-    else:
-        linhas.append(f"Por *{_moeda(oferta['preco'])}*{_forma(oferta)}")
-    if oferta.get("desconto"):
-        linhas.append(f"📉 {oferta['desconto']:.0f}% de desconto")
-    detalhes = []
-    if oferta.get("nota"):
-        detalhes.append("⭐ " + f"{oferta['nota']:.1f}".replace(".", ","))
-    if oferta.get("vendas"):
-        detalhes.append(f"{oferta['vendas']:,}".replace(",", ".") + " vendidos")
-    elif oferta.get("avaliacoes"):
-        detalhes.append(f"{oferta['avaliacoes']:,}".replace(",", ".") + " avaliações")
+        linhas.append(f"De ~{_moeda_curta(oferta['preco_antigo'])}~")
+    linhas += [f"Por *{_moeda_curta(oferta['preco'])}* 🔥{_forma(oferta)}", ""]
+    linhas += ["👉 *Pegar promoção:*", oferta["link"], ""]
     plataforma = oferta.get("plataforma") or "Shopee"
-    if plataforma != "Shopee":
-        detalhes.append(plataforma)
-    elif oferta.get("loja") and oferta["loja"] != "Shopee":
-        detalhes.append(oferta["loja"])
-    if detalhes:
-        linhas.append(" | ".join(detalhes))
-    linhas += ["", f"👉 {oferta['link']}", ""]
+    linhas.append(ONDE.get(plataforma, f"Loja oficial {plataforma}!"))
     if regras.eh_suplemento(oferta["nome"]):
-        linhas.append(regras.AVISO_SUPLEMENTO)
-    linhas += ["⚠️ Preço pode mudar a qualquer momento", regras.AVISO_AFILIADO, "", f"🛍️ Mais achados: {SITE_WHATSAPP}"]
+        linhas += ["", regras.AVISO_SUPLEMENTO]
+    linhas += ["", "_🔗 Link de afiliado · o preço pode mudar a qualquer momento_", "", CHAMADA_SITE]
     return "\n".join(linhas)
 
 

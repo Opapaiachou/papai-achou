@@ -48,8 +48,7 @@ def atualizar(escolhidas, arquivo=ARQUIVO, agora=None):
 
     # Central de Postagem: cada oferta com o post pronto e uma foto que o celular consegue baixar.
     for item in lista:
-        if not item.get("post"):
-            item["post"] = post.texto_canal(item)
+        item["post"] = post.texto_canal(item)  # sempre no modelo atual, inclusive os achados antigos
         if not item.get("foto_post"):
             item["foto_post"] = fotos.garantir(item["chave"], item.get("foto"))
     fotos.limpar(o["chave"] for o in lista)
