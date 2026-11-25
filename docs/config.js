@@ -1,6 +1,6 @@
 // Links do Papai Achou. Troque "#" pelos links reais quando as contas estiverem criadas.
 window.PAPAI_ACHOU = {
-  whatsapp: "https://whatsapp.com/channel/0029Vb9k12lICVfgIsD2LN0r",   // link do Canal do WhatsApp
+  whatsapp: "https://chat.whatsapp.com/DjBtUd5zrtuJMhDo0gltvJ",   // grupo de ofertas do WhatsApp
   telegram: "https://t.me/papaiachou",   // link do canal do Telegram
   instagram: "https://www.instagram.com/opapaiachou/",
   tiktok: "https://www.tiktok.com/@opapaiachou",

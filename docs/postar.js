@@ -1,5 +1,5 @@
 (function () {
-  // Central de Postagem: leva as ofertas do robô para o Canal do WhatsApp em 2 toques,
+  // Central de Postagem: leva as ofertas do robô para o grupo do WhatsApp em 2 toques,
   // pela tela de compartilhar do celular (caminho oficial, sem automação no WhatsApp).
   var CHAVE_FEITOS = "papaiAchouPostados";
   // O WhatsApp não mostra Canais na tela de compartilhar de outros apps. Por isso o botão principal
@@ -77,7 +77,7 @@
       aviso(arquivo ? "Foto salva e texto copiado. Abrindo o Canal…" : "Texto copiado. Abrindo o Canal…");
       abrirCanal();
     }).finally(function () {
-      if (botao.textContent === "Salvando a foto…") { botao.disabled = false; botao.textContent = "📲 Postar no Canal"; }
+      if (botao.textContent === "Salvando a foto…") { botao.disabled = false; botao.textContent = "Postar no Canal"; }
     });
   }
 
@@ -98,7 +98,7 @@
         if (erro && erro.name === "AbortError") return;
         aviso("Não abriu o compartilhar. O texto já está copiado.");
       });
-    }).finally(function () { botao.disabled = false; botao.textContent = "Enviar numa conversa"; });
+    }).finally(function () { botao.disabled = false; botao.textContent = "📲 Postar no grupo"; });
   }
 
   function cartao(o) {
@@ -120,11 +120,11 @@
     if (feitos[o.chave]) { var e = document.createElement("span"); e.className = "estado"; e.textContent = "✓ Postado"; corpo.appendChild(e); }
 
     var acoes = document.createElement("div"); acoes.className = "acoes";
-    var b = document.createElement("button"); b.type = "button"; b.className = "botao principal"; b.textContent = "📲 Postar no Canal";
-    b.addEventListener("click", function () { prepararCanal(o, b); });
+    var b = document.createElement("button"); b.type = "button"; b.className = "botao principal"; b.textContent = "📲 Postar no grupo";
+    b.addEventListener("click", function () { postar(o, b); });
     acoes.appendChild(b);
-    var z = document.createElement("button"); z.type = "button"; z.className = "botao mini"; z.textContent = "Enviar numa conversa";
-    z.addEventListener("click", function () { postar(o, z); });
+    var z = document.createElement("button"); z.type = "button"; z.className = "botao mini"; z.textContent = "Postar no Canal";
+    z.addEventListener("click", function () { prepararCanal(o, z); });
     acoes.appendChild(z);
     var c = document.createElement("button"); c.type = "button"; c.className = "botao mini"; c.textContent = "Copiar texto";
     c.addEventListener("click", function () { copiar(o.post || o.nome).then(function () { aviso("Texto copiado."); }); });
