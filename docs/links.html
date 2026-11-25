@@ -7,7 +7,7 @@
 <meta name="description" content="Canal do WhatsApp, Telegram e site do Papai Achou: achadinhos com preço conferido por um pai.">
 <meta property="og:title" content="Papai Achou | Links">
 <meta property="og:description" content="Canal do WhatsApp, Telegram e site do Papai Achou: achadinhos com preço conferido por um pai.">
-<meta property="og:image" content="img/compartilhar.png">
+<meta property="og:image" content="https://opapaiachou.com.br/img/compartilhar.png">
 <meta name="theme-color" content="#5B2EFF">
 <link rel="icon" href="img/icone.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,15 +37,15 @@
   footer { margin-top: 26px; font-size: 12px; opacity: .75; line-height: 1.4; }
 </style>
 </head>
-<body>
+<body data-pagina="links">
 <main>
   <img class="foto" src="img/mascote.png" alt="Mascote do Papai Achou" width="112" height="112">
   <h1>papai <b>achou</b></h1>
   <p class="sub">Achadinhos com preço conferido por um pai.<br>Black Friday 27/11 sem cilada.</p>
   <ul>
-    <li><a class="link destaque" href="https://whatsapp.com/channel/0029Vb9k12lICVfgIsD2LN0r" target="_blank" rel="noopener">
+    <li><a class="link destaque" data-link="whatsapp" href="https://whatsapp.com/channel/0029Vb9k12lICVfgIsD2LN0r" target="_blank" rel="noopener">
       <span class="ic" aria-hidden="true">💬</span><span class="tx">Canal do WhatsApp<small>Receba os achados do dia no celular</small></span></a></li>
-    <li><a class="link" href="https://t.me/papaiachou" target="_blank" rel="noopener">
+    <li><a class="link" data-link="telegram" href="https://t.me/papaiachou" target="_blank" rel="noopener">
       <span class="ic" aria-hidden="true">✈️</span><span class="tx">Canal do Telegram<small>Ofertas em tempo real, várias vezes por dia</small></span></a></li>
     <li><a class="link" href="index.html">
       <span class="ic" aria-hidden="true">🔎</span><span class="tx">Site com todos os achados<small>Busca por categoria: casa, escola, fitness, gamer…</small></span></a></li>
@@ -53,10 +53,12 @@
       <span class="ic" aria-hidden="true">🔥</span><span class="tx">Black Friday sem cilada<small>Os maiores descontos conferidos</small></span></a></li>
   </ul>
   <div class="redes">
-    <a href="https://www.instagram.com/opapaiachou/" target="_blank" rel="noopener">Instagram</a>
-    <a href="https://www.tiktok.com/@opapaiachou" target="_blank" rel="noopener">TikTok</a>
+    <a data-link="instagram" href="https://www.instagram.com/opapaiachou/" target="_blank" rel="noopener">Instagram</a>
+    <a data-link="tiktok" href="https://www.tiktok.com/@opapaiachou" target="_blank" rel="noopener">TikTok</a>
   </div>
-  <footer>Links de afiliado: você não paga nada a mais e ajuda o Papai Achou a continuar.</footer>
+  <footer>Links de afiliado: você não paga nada a mais e ajuda o Papai Achou a continuar.<br>Contamos visitas e cliques com o Google Analytics, sem dados pessoais.</footer>
 </main>
+<script src="config.js"></script>
+<script src="app.js?v=12"></script>
 </body>
 </html>

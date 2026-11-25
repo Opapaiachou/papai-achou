@@ -2,12 +2,33 @@
   var CATEGORIAS = ["Todos", "Fitness", "Casa e cozinha", "Escola", "Crianças", "Moda", "Maquiagem e beleza", "Tecnologia útil", "Gamer", "Presentes"];
   var pagina = document.body.getAttribute("data-pagina");
   var cfg = window.PAPAI_ACHOU || {};
-  var estado = { ofertas: [], categoria: "Todos", busca: "" };
+  var estado = { ofertas: [], categoria: "Todos", busca: "", ordem: "melhores" };
+
+  // ---------- Medição (Google Analytics 4) ----------
+  // Liga sozinho quando o config.js tiver o código ga4 ("G-..."). Sem código, nada é enviado.
+  // As campanhas são lidas dos parâmetros utm_ do link (ex.: ?utm_source=instagram&utm_medium=bio).
+  if (/^G-[A-Z0-9]+$/.test(cfg.ga4 || "")) {
+    var tag = document.createElement("script");
+    tag.async = true; tag.src = "https://www.googletagmanager.com/gtag/js?id=" + cfg.ga4;
+    document.head.appendChild(tag);
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function () { window.dataLayer.push(arguments); };
+    window.gtag("js", new Date());
+    window.gtag("config", cfg.ga4);
+  }
+  function medir(evento, dados) {
+    try { if (window.gtag) window.gtag("event", evento, dados || {}); } catch (e) {}
+  }
 
   // Links das redes (vêm do config.js)
   document.querySelectorAll("[data-link]").forEach(function (a) {
     var url = cfg[a.getAttribute("data-link")];
     if (url && url !== "#") { a.href = url; a.target = "_blank"; a.rel = "noopener"; }
+    a.addEventListener("click", function () { medir("clique_rede", { rede: a.getAttribute("data-link"), pagina: pagina }); });
+  });
+  // Faixa da Black Friday some sozinha depois da data.
+  document.querySelectorAll("[data-ate]").forEach(function (el) {
+    if (new Date().toISOString().slice(0, 10) > el.getAttribute("data-ate")) el.remove();
   });
   var ano = document.getElementById("ano");
   if (ano) ano.textContent = new Date().getFullYear();
@@ -100,6 +121,16 @@
     // Produtos gamer (Kabum e outras lojas) ficam na categoria Gamer, mesmo os que já estavam no site.
     var gamer = /\b(gamer|gaming|headset|xbox|playstation|ps4|ps5|nintendo|dualsense|joystick|console|controle sem fio|placa de v[ií]deo|rtx|radeon|geforce|ddr4|ddr5|mem[oó]ria ram|ssd|nvme|water ?cooler|mousepad|teclado mec[aâ]nico|cadeira gamer|hyperx|redragon|razer)\b/i;
     estado.ofertas.forEach(function (o) { if (gamer.test(o.nome || "")) o.categoria = "Gamer"; });
+    // Marcas da Awin com desconto acima de 70% costumam ter "preço de" inflado: não aparecem.
+    estado.ofertas = estado.ofertas.filter(function (o) { return !(/awin1\.com/.test(o.link || "") && (o.desconto || 0) > 70); });
+    // Achado aberto por um link compartilhado (?achado=...): vai para o topo, em destaque.
+    estado.maisRecente = estado.ofertas.reduce(function (m, o) { var t = new Date(o.data || 0).getTime(); return t > m ? t : m; }, 0);
+    var pedido = new URLSearchParams(location.search).get("achado");
+    if (pedido) {
+      estado.destaque = estado.ofertas.filter(function (o) { return idDo(o) === pedido; })[0] || null;
+      estado.destaquePerdido = !estado.destaque;
+      medir("abriu_compartilhado", { encontrado: !!estado.destaque });
+    }
     if (pagina === "black-friday") estado.ofertas.sort(function (a, b) { return (b.desconto || 0) - (a.desconto || 0); });
     else estado.ofertas.sort(function (a, b) { return (b.data || "").localeCompare(a.data || ""); });
     montarChips();
@@ -115,13 +146,81 @@
       b.addEventListener("click", function () {
         estado.categoria = cat;
         chips.querySelectorAll(".chip").forEach(function (x) { x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+        medir("filtro_categoria", { categoria: cat, pagina: pagina });
         desenhar();
       });
       chips.appendChild(b);
     });
   }
 
-  if (busca) busca.addEventListener("input", function () { estado.busca = semAcento(busca.value); desenhar(); });
+  var seletor = document.getElementById("ordem");
+  if (pagina === "black-friday") estado.ordem = "desconto";
+  if (seletor) {
+    seletor.value = estado.ordem;
+    seletor.addEventListener("change", function () { estado.ordem = seletor.value; medir("ordenar", { ordem: seletor.value }); desenhar(); });
+  }
+  if (busca) busca.addEventListener("input", function () {
+    estado.busca = semAcento(busca.value); desenhar();
+    clearTimeout(busca.tempo);
+    busca.tempo = setTimeout(function () { if (busca.value.trim().length > 2) medir("search", { search_term: busca.value.trim().slice(0, 60) }); }, 1500);
+  });
+
+  // Identificador curto e estável de cada achado, usado no link de compartilhar.
+  function idDo(o) {
+    var t = o.chave || o.link || o.nome || "", h = 5381;
+    for (var i = 0; i < t.length; i++) h = ((h * 33) ^ t.charCodeAt(i)) >>> 0;
+    return h.toString(36);
+  }
+  function linkDoAchado(o) {
+    return location.origin + location.pathname + "?achado=" + idDo(o) + "&utm_source=compartilhar&utm_medium=social";
+  }
+  function avisar(texto) {
+    var t = document.getElementById("aviso");
+    if (!t) { t = document.createElement("div"); t.id = "aviso"; t.className = "aviso"; t.setAttribute("role", "status"); document.body.appendChild(t); }
+    t.textContent = texto; t.classList.add("ver");
+    clearTimeout(avisar.tempo); avisar.tempo = setTimeout(function () { t.classList.remove("ver"); }, 2500);
+  }
+  function copiar(texto) {
+    if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(texto);
+    var c = document.createElement("textarea"); c.value = texto; c.setAttribute("readonly", ""); c.style.position = "fixed"; c.style.opacity = "0";
+    document.body.appendChild(c); c.select();
+    try { document.execCommand("copy"); } catch (e) {}
+    document.body.removeChild(c);
+    return Promise.resolve();
+  }
+  function compartilhar(o, botao) {
+    var url = linkDoAchado(o);
+    var texto = "Olha esse achado do Papai Achou: " + o.nome + " por " + moeda(o.preco) + (o.desconto >= 5 ? " (-" + Math.round(o.desconto) + "%)" : "");
+    var dados = { produto: o.nome.slice(0, 90), loja: o.plataforma || "", categoria: o.categoria || "" };
+    if (navigator.share) {
+      navigator.share({ title: "Papai Achou", text: texto, url: url }).then(function () {
+        dados.metodo = "nativo"; medir("compartilhar", dados);
+      }).catch(function () {});
+      return;
+    }
+    // Computador: menu simples com WhatsApp e copiar link.
+    var aberto = document.querySelector(".menu-compartilhar");
+    if (aberto) { var era = aberto.parentNode === botao.parentNode; aberto.remove(); if (era) return; }
+    var menu = document.createElement("div"); menu.className = "menu-compartilhar";
+    var zap = document.createElement("a");
+    zap.href = "https://wa.me/?text=" + encodeURIComponent(texto + "\n" + url); zap.target = "_blank"; zap.rel = "noopener";
+    zap.textContent = "Enviar no WhatsApp";
+    zap.addEventListener("click", function () { dados.metodo = "whatsapp"; medir("compartilhar", dados); menu.remove(); });
+    var cop = document.createElement("button"); cop.type = "button"; cop.textContent = "Copiar link";
+    cop.addEventListener("click", function () {
+      copiar(url).then(function () { avisar("Link copiado ✓"); });
+      dados.metodo = "copiar"; medir("compartilhar", dados); menu.remove();
+    });
+    menu.appendChild(zap); menu.appendChild(cop);
+    botao.parentNode.appendChild(menu);
+  }
+  document.addEventListener("click", function (e) {
+    var m = document.querySelector(".menu-compartilhar");
+    if (m && !m.contains(e.target) && !e.target.closest(".compartilhar")) m.remove();
+  });
+  document.addEventListener("keydown", function (e) {
+    var m = document.querySelector(".menu-compartilhar"); if (e.key === "Escape" && m) m.remove();
+  });
 
   function cartao(o) {
     var li = document.createElement("li"); li.className = "cartao";
@@ -146,11 +245,19 @@
     if (o.preco_antigo) { var ant = document.createElement("span"); ant.className = "antigo"; ant.textContent = moeda(o.preco_antigo); ant.setAttribute("aria-label", "Antes " + moeda(o.preco_antigo)); precos.appendChild(ant); }
     var atual = document.createElement("span"); atual.className = "atual"; atual.textContent = moeda(o.preco); precos.appendChild(atual);
     info.appendChild(precos);
+    if (o.preco_antigo && o.preco_antigo - o.preco >= 1) {
+      var eco = document.createElement("p"); eco.className = "economia";
+      eco.textContent = "Economize " + moeda(o.preco_antigo - o.preco) + (o.forma_preco ? " " + o.forma_preco : "");
+      info.appendChild(eco);
+    }
     var det = document.createElement("p"); det.className = "detalhes";
     var partes = [];
-    if (o.nota) partes.push("★ " + String(o.nota).replace(".", ","));
+    var horas = o.data ? (Date.now() - new Date(o.data).getTime()) / 36e5 : 99;
+    // "Novo" só para o que entrou na última rodada do robô (até 3h antes da mais recente).
+    if (o.data && estado.maisRecente && estado.maisRecente - new Date(o.data).getTime() < 3 * 36e5) { var novo = document.createElement("span"); novo.className = "novo"; novo.textContent = "Novo"; foto.appendChild(novo); }
+    if (o.nota) partes.push("★ " + String(o.nota).replace(".", ",") + (o.avaliacoes ? " (" + Number(o.avaliacoes).toLocaleString("pt-BR") + ")" : ""));
     if (o.vendas) partes.push(Number(o.vendas).toLocaleString("pt-BR") + " vendidos");
-    if (o.data) partes.push("achado em " + dataCurta(o.data));
+    if (o.data && horas >= 24) partes.push("achado em " + dataCurta(o.data));
     det.textContent = partes.join(" · ");
     info.appendChild(det);
     var cp = cupomDo(o);
@@ -165,11 +272,18 @@
     var loja = o.plataforma || "Shopee";
     a.textContent = "Comprar";
     a.setAttribute("aria-label", "Comprar " + o.nome + " em " + loja);
-    if (cp) a.addEventListener("click", function () {
-      try { navigator.clipboard.writeText(cp.cupom); } catch (e) {}
-      cod.textContent = "🎟️ Cupom " + cp.cupom + " copiado ✓";
+    a.addEventListener("click", function () {
+      medir("clique_comprar", { loja: loja, categoria: o.categoria || "", produto: o.nome.slice(0, 90),
+        value: Number(o.preco) || 0, currency: "BRL", desconto: Math.round(o.desconto || 0), pagina: pagina });
+      if (cp) { copiar(cp.cupom); cod.textContent = "🎟️ Cupom " + cp.cupom + " copiado ✓"; }
     });
-    info.appendChild(a);
+    var acoes = document.createElement("div"); acoes.className = "acoes";
+    var sh = document.createElement("button"); sh.type = "button"; sh.className = "compartilhar";
+    sh.setAttribute("aria-label", "Compartilhar " + o.nome);
+    sh.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M18 16.1c-.8 0-1.5.3-2 .8l-7.1-4.1c.1-.3.1-.5.1-.8s0-.5-.1-.8l7-4.1c.5.5 1.3.8 2.1.8 1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3c0 .3 0 .5.1.8l-7 4.1C8.5 9.3 7.8 9 7 9c-1.7 0-3 1.3-3 3s1.3 3 3 3c.8 0 1.5-.3 2-.8l7.1 4.2c-.1.2-.1.4-.1.7 0 1.6 1.3 2.9 2.9 2.9s2.9-1.3 2.9-2.9-1.2-3-2.8-3z"/></svg>';
+    sh.addEventListener("click", function () { compartilhar(o, sh); });
+    acoes.appendChild(a); acoes.appendChild(sh);
+    info.appendChild(acoes);
     li.appendChild(info);
     return li;
   }
@@ -178,35 +292,46 @@
     var s = document.createElement("span"); s.className = "sem-foto"; s.textContent = "papai achou"; el.insertBefore(s, el.firstChild);
   }
 
-  // Rodízio entre as lojas/marcas: um produto de cada loja por vez (Magalu, Mercado Livre, Nike,
-  // Shopee, Kabum...), para a vitrine ficar variada. Quando uma loja acaba, as outras continuam o rodízio.
-  // Dentro de cada loja, vem primeiro o maior desconto entre os achados mais recentes.
+  // Ordem da vitrine. "Melhores achados" pontua desconto (até 60%), nota, avaliações/vendas e quão recente é.
+  // Depois mistura lojas e categorias (veja intercalar).
+  function pontos(o) {
+    var p = Math.min(o.desconto || 0, 60);
+    if (o.nota) p += (o.nota - 4) * 20;
+    var prova = (o.avaliacoes || 0) + (o.vendas || 0);
+    if (prova) p += Math.min(Math.log10(prova) * 5, 15);
+    var dias = o.data ? (Date.now() - new Date(o.data).getTime()) / 864e5 : 3;
+    return p - Math.max(dias, 0) * 4;
+  }
+  var COMPARAR = {
+    melhores: function (a, b) { return pontos(b) - pontos(a); },
+    desconto: function (a, b) { return (b.desconto || 0) - (a.desconto || 0); },
+    menor: function (a, b) { return a.preco - b.preco; },
+    recentes: function (a, b) { return (b.data || "").localeCompare(a.data || ""); }
+  };
   function intercalar(lista) {
-    var grupos = {}, ordem = [];
-    lista.forEach(function (o) {
-      var k = o.plataforma || "Shopee";
-      if (!grupos[k]) { grupos[k] = []; ordem.push(k); }
-      grupos[k].push(o);
-    });
-    // Lojas com menos produtos entram primeiro na roda, para aparecerem logo no topo.
-    ordem.sort(function (a, b) { return grupos[a].length - grupos[b].length; });
-    ordem.forEach(function (k) {
-      grupos[k].sort(function (a, b) {
-        var porDesconto = (b.desconto || 0) - (a.desconto || 0);
-        if (pagina === "black-friday") return porDesconto;  // na Black Friday, maior desconto primeiro
-        return (b.data || "").slice(0, 10).localeCompare((a.data || "").slice(0, 10)) || porDesconto;
-      });
-    });
-    var resultado = [], resta = true;
-    while (resta) {
-      resta = false;
-      ordem.forEach(function (k) {
-        if (grupos[k].length) { resultado.push(grupos[k].shift()); resta = true; }
-      });
+    var fila = lista.slice().sort(COMPARAR[estado.ordem] || COMPARAR.melhores);
+    if (estado.ordem === "menor") return fila;  // por preço, a ordem é a ordem
+    // Variedade: escolhe o mais bem colocado da fila, com duas regras:
+    // - no máximo 2 achados seguidos da mesma loja, se houver outra loja disponível (lojas intercaladas);
+    // - repetir uma categoria dos últimos 4 cards custa 60 posições (categorias misturadas).
+    var resultado = [];
+    function k(o) { return o.plataforma || "Shopee"; }
+    while (fila.length) {
+      var n = resultado.length, rc = resultado.slice(-4);
+      var travada = n >= 2 && k(resultado[n - 1]) === k(resultado[n - 2]) ? k(resultado[n - 1]) : null;
+      if (travada && !fila.some(function (o) { return k(o) !== travada; })) travada = null;
+      var melhor = -1, nota = -1e9;
+      for (var j = 0; j < fila.length; j++) {
+        var c = fila[j];
+        if (travada && k(c) === travada) continue;
+        var v = -j;
+        rc.forEach(function (r) { if (r.categoria === c.categoria) v -= 60; });
+        if (v > nota) { nota = v; melhor = j; }
+      }
+      resultado.push(fila.splice(melhor, 1)[0]);
     }
     return resultado;
   }
-
   function desenhar() {
     var lista = intercalar(estado.ofertas.filter(function (o) {
       var okCat = estado.categoria === "Todos" || o.categoria === estado.categoria;
@@ -219,12 +344,28 @@
       contagem.textContent = "";
       return;
     }
-    contagem.textContent = lista.length === 1 ? "1 achado" : lista.length + " achados";
+    var ultima = estado.ofertas.reduce(function (m, o) { return (o.data || "") > m ? o.data : m; }, "");
+    var hora = ultima ? new Date(ultima) : null;
+    contagem.textContent = (lista.length === 1 ? "1 achado" : lista.length + " achados") +
+      (hora && !isNaN(hora) ? " · atualizado " + (hora.toDateString() === new Date().toDateString() ? "hoje às " : "em " + dataCurta(ultima) + " às ") +
+        hora.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "");
     if (!lista.length) {
       grade.innerHTML = '<li class="vazio"><h2>Nada por aqui ainda</h2><p>Tente outra palavra ou outra categoria.</p></li>';
       return;
     }
-    lista.forEach(function (o) { grade.appendChild(cartao(o)); });
+    if (estado.destaquePerdido) {
+      var sumiu = document.createElement("li"); sumiu.className = "vazio destaque-aviso";
+      sumiu.innerHTML = "<h2>Esse achado já saiu</h2><p>O preço mudou ou acabou o estoque. Olha os achados de hoje aqui embaixo 👇</p>";
+      grade.appendChild(sumiu);
+    }
+    var d = estado.destaque;
+    if (d && lista.indexOf(d) >= 0) { lista.splice(lista.indexOf(d), 1); lista.unshift(d); }
+    lista.forEach(function (o) {
+      var c = cartao(o);
+      if (o === d) c.classList.add("destaque");
+      grade.appendChild(c);
+    });
+    if (d && !desenhar.rolou) { desenhar.rolou = true; var alvo = grade.querySelector(".destaque"); if (alvo) alvo.scrollIntoView({ block: "center" }); }
   }
 
   function iniciarContagem() {

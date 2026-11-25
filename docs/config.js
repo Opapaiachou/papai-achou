@@ -4,5 +4,7 @@ window.PAPAI_ACHOU = {
   telegram: "https://t.me/papaiachou",   // link do canal do Telegram
   instagram: "https://www.instagram.com/opapaiachou/",
   tiktok: "https://www.tiktok.com/@opapaiachou",
+  // Google Analytics 4: cole aqui o "ID da métrica" (G-XXXXXXX). Vazio = sem medição.
+  ga4: "",
   blackFriday: "2026-11-27T00:00:00-03:00"
 };
