@@ -4,7 +4,7 @@ import json
 import os
 from datetime import datetime, timedelta, timezone
 
-from robo import config, fotos, post, semelhanca
+from robo import awin, config, curadoria, fotos, post, semelhanca
 
 ARQUIVO = os.path.join(os.path.dirname(os.path.dirname(__file__)), "docs", "ofertas.json")
 CAMPOS = ("chave", "preco", "preco_antigo", "desconto", "nota", "vendas", "avaliacoes", "forma_preco", "categoria", "loja",
@@ -16,6 +16,17 @@ def _carregar(arquivo):
         return []
     with open(arquivo, encoding="utf-8") as f:
         return json.load(f)
+
+
+def _revisar_antiga(item):
+    """Aplica as regras atuais aos achados que já estavam no site. Devolve None se não vale mais."""
+    if "awin1.com" in (item.get("link") or ""):
+        if (item.get("desconto") or 0) > awin.DESCONTO_MAXIMO_AWIN:
+            return None  # desconto inflado: sai do site
+        item["categoria"] = curadoria.categoria_final(item.get("nome"), awin.categoria_de(item.get("nome")) or item.get("categoria"))
+    else:
+        item["categoria"] = curadoria.categoria_final(item.get("nome"), item.get("categoria"))
+    return item
 
 
 def atualizar(escolhidas, arquivo=ARQUIVO, agora=None):
@@ -32,6 +43,7 @@ def atualizar(escolhidas, arquivo=ARQUIVO, agora=None):
     chaves_novas = {o["chave"] for o in novas}
     limite = (agora - timedelta(days=config.VITRINE_DIAS)).isoformat()
     antigas = [o for o in _carregar(arquivo) if o.get("chave") not in chaves_novas and o.get("data", "") >= limite]
+    antigas = [o for o in map(_revisar_antiga, antigas) if o]
     lista = semelhanca.sem_repetidos(novas + antigas)[: config.VITRINE_MAXIMO]
 
     # Central de Postagem: cada oferta com o post pronto e uma foto que o celular consegue baixar.

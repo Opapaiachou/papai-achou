@@ -28,6 +28,8 @@ from robo import config, monitor
 POR_MARCA = 12
 # Desconto mínimo para um produto da Awin entrar (as marcas não informam vendas nem nota).
 DESCONTO_MINIMO_AWIN = 15
+# Desconto acima disso na Awin quase sempre é "preço de" inflado pela loja (ex.: bolsa de R$ 1.599 por R$ 269).
+DESCONTO_MAXIMO_AWIN = 70
 # Feed que a marca não atualiza há mais que isso fica de fora (o preço pode estar velho).
 DIAS_FEED_MAXIMO = 10
 # Colunas pedidas à Awin para cada feed.
@@ -41,7 +43,10 @@ MAPA_CATEGORIAS = [
       "placa de video", "rtx", "geforce", "radeon", "memoria ram", "ssd", "teclado mecanico", "redragon",
       "hyperx", "razer"), "Gamer"),
     (("legging", "fitness", "academia", "treino", "whey", "creatina", "corrida", "running", "yoga", "haltere",
-      "suplemento", "proteina", "garrafa termica stanley", "squeeze"), "Fitness"),
+      "suplemento", "proteina", "garrafa termica stanley", "squeeze", "dri-fit", "dri fit", "drifit", "aeroswift",
+      "chuteira", "futsal", "society", "ciclista", "segunda pele", "compressao", "top esportivo", "bermuda esportiva",
+      "short esportivo", "shorts esportivo", "training", "treinamento", "pro sculpt", "nike pro ", "techfit",
+      "aeroready", "climacool", "wave rider", "wave prophecy", "tenis de corrida", "ziclo", "pilates", "musculacao"), "Fitness"),
     (("mochila escolar", "estojo", "lancheira", "caderno", "escolar"), "Escola"),
     (("infantil", "bebe", "kids", "brinquedo", "lego", "crianca", "menino", "menina"), "Crianças"),
     (("perfume", "maquiagem", "batom", "base ", "skincare", "hidratante", "shampoo", "condicionador",
@@ -61,8 +66,14 @@ def _sem_acento(texto):
     return "".join(c for c in texto if not unicodedata.combining(c))
 
 
+# Marcas cujo nome engana o mapa (ex.: "Lança Perfume" é roupa, não perfume): saem antes de comparar.
+MARCAS_CONFUSAS = ("lanca perfume", "perfume de mulher")
+
+
 def categoria_de(*textos):
     alvo = " " + " ".join(_sem_acento(t) for t in textos) + " "
+    for marca in MARCAS_CONFUSAS:
+        alvo = alvo.replace(marca, " ")
     for palavras, categoria in MAPA_CATEGORIAS:
         if any(p in alvo for p in palavras):
             return categoria
@@ -99,7 +110,7 @@ def converter(linha):
             return None
     else:
         desconto = round((1 - por / de) * 100)
-        if desconto < DESCONTO_MINIMO_AWIN or desconto > 85:  # desconto absurdo costuma ser erro do feed
+        if desconto < DESCONTO_MINIMO_AWIN or desconto > DESCONTO_MAXIMO_AWIN:  # desconto absurdo: preço de inflado
             return None
     estoque = str(linha.get("in_stock", "1")).strip().lower()
     if estoque in ("0", "false", "no", "nao", "não"):

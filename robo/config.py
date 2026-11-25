@@ -82,7 +82,7 @@ PALAVRAS_CHAVE = {
 # Vitrine (site): quantas ofertas manter publicadas, quantas entram por rodada e por quantos dias.
 VITRINE_MAXIMO = 300
 VITRINE_POR_RODADA = 80
-VITRINE_DIAS = 14
+VITRINE_DIAS = 5
 
 # Quantos produtos buscar por palavra (máximo da API: 50).
 PRODUTOS_POR_PALAVRA = 50
