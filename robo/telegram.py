@@ -1,5 +1,6 @@
 """Envio das ofertas para o seu chat privado pelo robô oficial do Telegram."""
 
+import json
 import time
 
 import requests
@@ -28,11 +29,15 @@ def _chamar(token, metodo, dados, tentativas=3):
         raise RuntimeError(f"Telegram recusou {metodo}: {corpo.get('description')}")
 
 
-def enviar_post(token, chat_id, foto, texto):
-    """Foto + texto puro (sem HTML), para copiar e colar no WhatsApp com os *asteriscos* intactos."""
+def enviar_post(token, chat_id, foto, texto, botoes=None):
+    """Foto + texto puro (sem HTML), para copiar e colar no WhatsApp com os *asteriscos* intactos.
+
+    botoes: lista de linhas de botões com link, ex.: [[{"text": "Abrir", "url": "https://..."}]].
+    """
+    extra = {"reply_markup": json.dumps({"inline_keyboard": botoes})} if botoes else {}
     if foto and len(texto) <= LIMITE_LEGENDA:
         try:
-            return _chamar(token, "sendPhoto", {"chat_id": chat_id, "photo": foto, "caption": texto})
+            return _chamar(token, "sendPhoto", {"chat_id": chat_id, "photo": foto, "caption": texto, **extra})
         except RuntimeError:
             pass
     elif foto:
@@ -40,7 +45,7 @@ def enviar_post(token, chat_id, foto, texto):
             _chamar(token, "sendPhoto", {"chat_id": chat_id, "photo": foto})
         except RuntimeError:
             pass
-    return _chamar(token, "sendMessage", {"chat_id": chat_id, "text": texto})
+    return _chamar(token, "sendMessage", {"chat_id": chat_id, "text": texto, "disable_web_page_preview": "true", **extra})
 
 
 def enviar_oferta(token, chat_id, foto, legenda):

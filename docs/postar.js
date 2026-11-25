@@ -124,6 +124,10 @@
     var el = document.getElementById("o-" + encodeURIComponent(alvo));
     if (!el && estado.filtro !== "todas") { estado.filtro = "todas"; return desenhar(); }
     if (el) { el.classList.add("destaque"); el.scrollIntoView({ block: "center" }); }
+    else if (estado.ofertas.length && !destacar.avisou) {
+      destacar.avisou = true;  // o robô manda no Telegram antes de o site atualizar (leva 1 a 2 minutos)
+      aviso("Essa oferta ainda está chegando no site. Atualize a página em 2 minutinhos.");
+    }
   }
   window.addEventListener("hashchange", desenhar);
 

@@ -65,7 +65,13 @@ def coletar_exemplo():
 def _enviar(token, chat_id, oferta, posicao, total):
     """Duas mensagens: os bastidores (só para você) e o post pronto para o canal."""
     telegram.enviar_texto(token, chat_id, post.legenda_aprovacao(oferta, posicao, total))
-    telegram.enviar_post(token, chat_id, oferta["foto"], post.texto_canal(oferta))
+    texto = post.texto_canal(oferta)
+    com_foto = [{"text": "📲 Postar com foto", "url": post.link_central(oferta["chave"])}]
+    so_texto = [{"text": "💬 Abrir no WhatsApp", "url": post.link_whatsapp(texto)}]
+    try:
+        telegram.enviar_post(token, chat_id, oferta["foto"], texto, botoes=[com_foto, so_texto])
+    except RuntimeError:  # se o Telegram recusar o link longo do WhatsApp, vai só o botão da Central
+        telegram.enviar_post(token, chat_id, oferta["foto"], texto, botoes=[com_foto])
 
 
 def rodada(demo=False, teste=False, de_planilha=False):

@@ -51,8 +51,22 @@ def texto_canal(oferta):
     linhas += ["", f"👉 {oferta['link']}", ""]
     if regras.eh_suplemento(oferta["nome"]):
         linhas.append(regras.AVISO_SUPLEMENTO)
-    linhas += ["⚠️ Preço pode mudar a qualquer momento", regras.AVISO_AFILIADO]
+    linhas += ["⚠️ Preço pode mudar a qualquer momento", regras.AVISO_AFILIADO, "", f"🛍️ Mais achados: {SITE_WHATSAPP}"]
     return "\n".join(linhas)
+
+
+# Link do site marcado como vindo do WhatsApp (aparece assim no Google Analytics).
+SITE_WHATSAPP = "https://opapaiachou.com.br/?utm_source=whatsapp&utm_medium=canal"
+
+
+def link_whatsapp(texto):
+    """Link oficial do WhatsApp que abre o app com o texto pronto (você escolhe o Canal e envia)."""
+    return "https://wa.me/?text=" + quote(texto, safe="")
+
+
+def link_central(chave):
+    """Central de Postagem já aberta na oferta: o botão de lá compartilha foto + texto no WhatsApp."""
+    return f"{CENTRAL}#{quote(chave, safe='')}"
 
 
 CENTRAL = "https://opapaiachou.com.br/postar.html"
