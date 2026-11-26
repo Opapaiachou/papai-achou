@@ -36,7 +36,11 @@ DIAS_FEED_MAXIMO = 10
 # Colunas pedidas à Awin para cada feed.
 COLUNAS = ("aw_deep_link,product_name,aw_product_id,merchant_product_id,merchant_image_url,aw_image_url,"
            "merchant_category,category_name,search_price,store_price,rrp_price,product_price_old,in_stock,"
-           "savings_percent,currency,merchant_name,merchant_id,merchant_deep_link,average_rating,reviews")
+           "savings_percent,currency,merchant_name,merchant_id,merchant_deep_link,average_rating,reviews,"
+           "base_price,display_price,saving,custom_1,custom_2,custom_3,custom_4,custom_5")
+# Campos de preço que aparecem na amostra do log (para descobrir onde cada marca põe o preço promocional).
+CAMPOS_PRECO = ("search_price", "store_price", "rrp_price", "product_price_old", "base_price", "display_price",
+                "saving", "savings_percent", "custom_1", "custom_2", "custom_3", "custom_4", "custom_5")
 
 # Palavra no nome/categoria do produto -> categoria da vitrine. A primeira que bater vale.
 MAPA_CATEGORIAS = [
@@ -226,6 +230,9 @@ def coletar():
             lidas = 0
             for linha in _baixar(url_feed):
                 lidas += 1
+                if lidas <= 2:  # amostra dos campos de preço no log
+                    amostra = {c: linha.get(c) for c in CAMPOS_PRECO if linha.get(c) not in (None, "")}
+                    print(f"Awin amostra: {marca_feed} | {(linha.get('product_name') or '')[:40]} | {amostra}")
                 no = converter(linha)
                 if no and no.get("_semReferencia"):
                     # Sem "preço de" no feed: anota o preço e só vira oferta se caiu frente ao nosso histórico.
