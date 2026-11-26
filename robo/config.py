@@ -120,3 +120,8 @@ AVALIACOES_MINIMAS = 20
 
 # Lojas buscadas nas rodadas automáticas. A Shopee entra sozinha quando as chaves da Open API existirem.
 LOJAS_AUTOMATICAS = ["Magalu", "Awin", "Shopee"]
+
+# ---------- Shopee (feed de produtos) ----------
+# Seu ID de afiliado da Shopee (aparece no painel de afiliados e em todo link que você compartilha;
+# não é segredo). O robô coloca esse ID nos links do feed que vierem sem ele. Vazio = esses links ficam de fora.
+SHOPEE_AFFILIATE_ID = ""

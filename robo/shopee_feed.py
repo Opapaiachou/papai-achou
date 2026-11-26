@@ -135,6 +135,9 @@ def converter(linha, mapa):
     comissao = _num(pega("comissao"))
     if comissao and comissao > 1:  # veio em % (ex.: 7) e o robô usa fração (0,07)
         comissao = comissao / 100
+    link = com_afiliado(link)
+    if not link:
+        return None  # link sem o seu ID de afiliado não gera comissão: fica de fora
     item = pega("item") or re.sub(r"\W", "", link)[-16:]
     return {
         "itemId": item,
@@ -157,10 +160,19 @@ def converter(linha, mapa):
     }
 
 
+def com_afiliado(link):
+    """Garante o seu ID de afiliado no link da Shopee. Devolve None se não houver como garantir."""
+    if "affiliate_id=" in link or "s.shopee.com.br/" in link:
+        return link  # link curto de afiliado ou já com o ID
+    if "an_redir" in link and config.SHOPEE_AFFILIATE_ID:
+        return link + ("&" if "?" in link else "?") + "affiliate_id=" + config.SHOPEE_AFFILIATE_ID
+    return None
+
+
 def _nota_interna(no):
     """Ordem dentro de cada categoria: desconto e vendas pesam mais."""
     import math
-    return (no["priceDiscountRate"] or 0) + math.log10(max(no["sales"] or 1, 1)) * 8 + ((no["ratingStar"] or 4.5) - 4) * 20
+    return min(no["priceDiscountRate"] or 0, 50) + math.log10(max(no["sales"] or 1, 1)) * 8 + ((no["ratingStar"] or 4.5) - 4) * 20
 
 
 def coletar():
@@ -180,6 +192,8 @@ def coletar():
         print(f"Shopee feed: não achei as colunas {faltando}; nada entra até ajustar o robô.")
         return []
     leitor = csv.DictReader(texto, fieldnames=cabecalho, delimiter=separador)
+    if not config.SHOPEE_AFFILIATE_ID:
+        print("Shopee feed: sem SHOPEE_AFFILIATE_ID em config.py; links sem o ID de afiliado ficam de fora.")
     por_categoria, lidas, aproveitadas = {}, 0, 0
     for linha in leitor:
         lidas += 1

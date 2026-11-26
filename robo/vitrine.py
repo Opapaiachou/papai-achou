@@ -20,6 +20,13 @@ def _carregar(arquivo):
 
 def _revisar_antiga(item):
     """Aplica as regras atuais aos achados que já estavam no site. Devolve None se não vale mais."""
+    link = item.get("link") or ""
+    if "shope.ee/an_redir" in link and "affiliate_id=" not in link:
+        from robo import shopee_feed
+        novo = shopee_feed.com_afiliado(link)
+        if not novo:
+            return None  # link da Shopee sem o ID de afiliado: sai do site
+        item["link"] = novo
     if "awin1.com" in (item.get("link") or ""):
         if (item.get("desconto") or 0) > awin.DESCONTO_MAXIMO_AWIN:
             return None  # desconto inflado: sai do site
