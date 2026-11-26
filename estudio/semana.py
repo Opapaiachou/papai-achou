@@ -57,7 +57,7 @@ def tipo(nome):
     return nome.lower()
 
 
-def escolher(qtd, categorias=None, termos=None, preco_max=None, min_desc=20):
+def escolher(qtd, categorias=None, termos=None, preco_max=None, min_desc=20, excluir=None):
     """Melhores ofertas com foto, intercalando as lojas, sem repetir produto."""
     ofs = json.load(open(OFERTAS, encoding="utf-8"))
     cands = []
@@ -69,6 +69,8 @@ def escolher(qtd, categorias=None, termos=None, preco_max=None, min_desc=20):
         if categorias and o.get("categoria") not in categorias:
             continue
         if termos and not re.search(termos, o["nome"], re.I):
+            continue
+        if excluir and re.search(excluir, o["nome"], re.I):
             continue
         if preco_max and o["preco"] > preco_max:
             continue
@@ -306,13 +308,44 @@ def dia_26():
           "Amanhã o site *atualiza o dia todo*", ["Amanhã o site do Papai atualiza o dia todo.", "Link na bio!"])
 
 
+def dia_27():
+    pasta = os.path.join(SAIDA, "post_semana-27-11")
+    carrossel(pasta, "BLACK FRIDAY É HOJE", "Os *maiores descontos* de hoje", "7 achados conferidos pelo Papai",
+              escolher(7, min_desc=30), "O site atualiza *o dia todo*")
+    video(os.path.join(SAIDA_V, "tiktok-27-11.mp4"), "BLACK FRIDAY É HOJE", "de desconto *é hoje!*",
+          "É hoje! Blék fráidei no site do Papai!", escolher(3, min_desc=30),
+          "O site atualiza *o dia todo*", ["Hoje o site do Papai atualiza o dia todo.", "Link na bio!"])
+
+
+def dia_28():
+    pasta = os.path.join(SAIDA, "post_semana-28-11")
+    carrossel(pasta, "PRESENTES DE NATAL", "Presente de Natal *mais barato*", "Brinquedos e presentes com desconto",
+              escolher(6, categorias={"Crianças", "Presentes"}), "Mais presentes *no site*")
+    video(os.path.join(SAIDA_V, "tiktok-28-11.mp4"), "AINDA DÁ TEMPO", "de desconto *depois da Black*",
+          "Passou a blék fráidei e ainda tem isso!", escolher(3, categorias=SEM_GAMER),
+          "Ainda tem *muito achado* no site", ["Ainda tem muito achado no site do Papai.", "Link na bio!"])
+
+
+ACESSORIO_FRACO = r"\bcapa|capinha|pel[ií]cula|\bcase\b|^para |adesiv"
+
+
+def dia_30():
+    pasta = os.path.join(SAIDA, "post_semana-30-11")
+    carrossel(pasta, "CYBER MONDAY", "Tecnologia *em promoção*", "Fone, relógio, acessórios e mais",
+              escolher(6, categorias={"Tecnologia útil", "Gamer"}, excluir=ACESSORIO_FRACO), "Tem filtro *Tecnologia* no site")
+    video(os.path.join(SAIDA_V, "tiktok-30-11.mp4"), "CYBER MONDAY", "de desconto em *tecnologia*",
+          "Saibe mândei: tecnologia mais barata!", escolher(3, categorias={"Gamer", "Tecnologia útil"}, min_desc=15, excluir=ACESSORIO_FRACO),
+          "Cyber Monday *no site do Papai*", ["Tem muito mais tecnologia no site do Papai.", "Link na bio!"])
+
+
 def atracao():
     import atracao as a
     a.gerar()
 
 
-LOTE = {"23-11": dia_23, "24-11": dia_24, "25-11": dia_25, "26-11": dia_26, "atracao": atracao}
-PADRAO = ["atracao"]  # o que o workflow renderiza a cada push (os dias 23 a 26 já foram publicados)
+LOTE = {"23-11": dia_23, "24-11": dia_24, "25-11": dia_25, "26-11": dia_26, "atracao": atracao,
+        "27-11": dia_27, "28-11": dia_28, "30-11": dia_30}
+PADRAO = ["27-11", "28-11", "30-11"]  # o que o workflow renderiza a cada push
 
 
 def main(dias=None):
