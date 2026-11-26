@@ -14,7 +14,7 @@ import sys
 
 import requests
 
-from robo import awin, config, curadoria, historico, links, magalu, planilha, post, shopee, telegram, vitrine
+from robo import awin, config, curadoria, historico, links, magalu, planilha, post, shopee, shopee_feed, telegram, vitrine
 
 PASTA = os.path.dirname(os.path.dirname(__file__))
 
@@ -36,7 +36,12 @@ def coletar_reais():
             nos += awin.coletar()
         except Exception as erro:  # feed fora do ar não derruba a rodada
             print(f"Aviso Awin: {erro}")
-    if "Shopee" in config.LOJAS_AUTOMATICAS and os.environ.get("SHOPEE_APP_ID", "").strip():
+    if "Shopee" in config.LOJAS_AUTOMATICAS and os.environ.get("SHOPEE_FEED_URL", "").strip():
+        try:  # feed de produtos do painel de afiliados (não precisa da Open API)
+            nos += shopee_feed.coletar()
+        except Exception as erro:  # feed fora do ar não derruba a rodada
+            print(f"Aviso Shopee feed: {erro}")
+    elif "Shopee" in config.LOJAS_AUTOMATICAS and os.environ.get("SHOPEE_APP_ID", "").strip():
         nos += coletar_shopee()
     elif "Shopee" in config.LOJAS_AUTOMATICAS:
         print("Shopee fora desta rodada: ainda sem as chaves da Open API (SHOPEE_APP_ID e SHOPEE_SECRET).")
