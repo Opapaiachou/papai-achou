@@ -74,7 +74,7 @@ SITE_WHATSAPP = "https://opapaiachou.com.br/?utm_source=whatsapp&utm_medium=cana
 
 
 def link_whatsapp(texto):
-    """Link oficial do WhatsApp que abre o app com o texto pronto (você escolhe o Canal e envia)."""
+    """Link oficial do WhatsApp que abre o app com o texto pronto (você escolhe o grupo e envia)."""
     return "https://wa.me/?text=" + quote(texto, safe="")
 
 
@@ -102,15 +102,15 @@ def legenda_aprovacao(oferta, posicao, total):
         f"🔒 <b>Oferta {posicao} de {total}</b> · {oferta.get('plataforma') or 'Shopee'} · {oferta['pontos']} pontos · só para você\n"
         + comissao
         + f"{conferido}\n"
-        + f"📲 Postar no Canal em 2 toques: {CENTRAL}#{quote(str(oferta.get('chave', '')), safe='')}\n"
+        + f"📲 Postar no grupo em 2 toques: {CENTRAL}#{quote(str(oferta.get('chave', '')), safe='')}\n"
         + "⬇️ Post pronto para o WhatsApp logo abaixo"
     )
 
 
 INSTRUCOES_WHATSAPP = (
-    "📲 <b>Como postar no Canal do WhatsApp</b>\n"
+    "📲 <b>Como postar no grupo de ofertas do WhatsApp</b>\n"
     "1. Na oferta que quiser, segure a foto e toque em <b>Salvar</b> (vai para a galeria).\n"
     "2. Segure a mesma mensagem e toque em <b>Copiar</b> (copia o texto).\n"
-    "3. No WhatsApp, abra o Canal Papai Achou, anexe a foto da galeria e cole o texto como legenda.\n"
+    "3. No WhatsApp, abra o grupo Papai Achou, anexe a foto da galeria e cole o texto como legenda.\n"
     "Os *asteriscos* e ~tis~ viram <b>negrito</b> e riscado no WhatsApp."
 )

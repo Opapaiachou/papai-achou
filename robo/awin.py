@@ -231,7 +231,7 @@ def coletar():
             chave = f"awin-{no['shopId']}-{no['itemId']}"
             tipico = monitor.registrar(precos, chave, no["productName"], no["priceMin"])
             desconto = monitor.em_queda(no["priceMin"], tipico)
-            if not desconto:
+            if not desconto or desconto > DESCONTO_MAXIMO_AWIN:  # queda absurda: "preço típico" errado na loja
                 continue
             em_queda += 1
             no["_precoAntigo"] = round(tipico, 2)
