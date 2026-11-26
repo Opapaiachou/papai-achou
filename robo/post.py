@@ -28,7 +28,8 @@ def _forma(oferta):
 # Onde a oferta está, no fim do post (como "Agora, na Amazon!").
 ONDE = {"Magalu": "Agora, no Magalu!", "Mercado Livre": "Agora, no Mercado Livre!", "Shopee": "Agora, na Shopee!",
         "Amazon": "Agora, na Amazon!", "Kabum": "Agora, na KaBuM!", "KaBuM": "Agora, na KaBuM!",
-        "Dafiti": "Agora, na Dafiti!"}
+        "Dafiti": "Agora, na Dafiti!", "C&A": "Agora, na C&A!", "Nike": "Agora, na Nike!", "adidas": "Agora, na adidas!",
+        "Olympikus": "Agora, na Olympikus!", "Lego": "Agora, na LEGO!", "Arno": "Agora, na Arno!"}
 # /zap leva ao site com utm_source=whatsapp (docs/zap/index.html), para o Analytics contar o Canal.
 CHAMADA_SITE = "🛍️ Para mais ofertas acesse o site: www.opapaiachou.com.br/zap"
 

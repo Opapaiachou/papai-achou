@@ -14,6 +14,7 @@ Como funciona:
 
 import csv
 import gzip
+import html
 import io
 import os
 import re
@@ -121,7 +122,7 @@ def converter(linha):
     categoria = categoria_de(nome, linha.get("merchant_category"), linha.get("category_name"))
     if not categoria or not linha.get("aw_deep_link"):
         return None
-    marca = (linha.get("merchant_name") or "").replace(" BR", "").strip()
+    marca = html.unescape(linha.get("merchant_name") or "").replace(" BR", "").strip()
     nota = _num(linha.get("average_rating"))
     avaliacoes = _num(linha.get("reviews"))
     return {
@@ -191,14 +192,15 @@ def _feeds_ativos(url_lista):
             atualizado = datetime.strptime((linha.get("Last Imported") or "").strip(), "%Y-%m-%d %H:%M:%S")
         except ValueError:
             atualizado = None
-        feeds.append(((linha.get("Advertiser Name") or "").replace(" BR", "").strip(), url, atualizado))
+        feeds.append((html.unescape(linha.get("Advertiser Name") or "").replace(" BR", "").strip(), url, atualizado))
     return feeds
 
 
 def _baixar(url):
-    resposta = requests.get(url, timeout=180)
+    """Baixa o feed e devolve as linhas uma a uma (não guarda o feed inteiro na memória)."""
+    resposta = requests.get(url, timeout=300)
     resposta.raise_for_status()
-    return list(_ler_feed(resposta.content))
+    return _ler_feed(resposta.content)
 
 
 def coletar():
@@ -207,41 +209,45 @@ def coletar():
         print("Awin fora desta rodada: ainda sem o segredo AWIN_FEED_URL (lista de feeds).")
         return []
     if "feedList" in url:
-        linhas, limite = [], datetime.now() - timedelta(days=DIAS_FEED_MAXIMO)
+        fontes, limite = [], datetime.now() - timedelta(days=DIAS_FEED_MAXIMO)
         for marca, url_feed, atualizado in _feeds_ativos(url):
             if atualizado and atualizado < limite:
                 print(f"Awin: {marca} fora (feed sem atualização desde {atualizado:%d/%m/%Y}).")
                 continue
-            try:
-                novas = _baixar(url_feed)
-                print(f"Awin: {marca} com {len(novas)} produtos no feed.")
-                linhas += novas
-            except Exception as erro:  # uma marca com problema não derruba as outras
-                print(f"Aviso Awin: falha no feed de {marca}: {erro}")
+            fontes.append((marca, url_feed))
     else:
-        linhas = _baixar(url)
+        fontes = [("feed", url)]
+    total = 0
     por_marca, motivos = {}, {}
     acompanhados, em_queda = 0, 0
     precos = monitor.carregar()
-    for linha in linhas:
-        no = converter(linha)
-        if no and no.get("_semReferencia"):
-            # Sem "preço de" no feed: anota o preço e só vira oferta se caiu frente ao nosso histórico.
-            acompanhados += 1
-            chave = f"awin-{no['shopId']}-{no['itemId']}"
-            tipico = monitor.registrar(precos, chave, no["productName"], no["priceMin"])
-            desconto = monitor.em_queda(no["priceMin"], tipico)
-            if not desconto or desconto > DESCONTO_MAXIMO_AWIN:  # queda absurda: "preço típico" errado na loja
-                continue
-            em_queda += 1
-            no["_precoAntigo"] = round(tipico, 2)
-            no["priceDiscountRate"] = desconto
-        if no:
-            por_marca.setdefault(no["shopName"], []).append(no)
-        else:
-            marca = (linha.get("merchant_name") or "?").replace(" BR", "").strip()
-            chave = (marca, _motivo(linha))
-            motivos[chave] = motivos.get(chave, 0) + 1
+    for marca_feed, url_feed in fontes:
+        try:
+            lidas = 0
+            for linha in _baixar(url_feed):
+                lidas += 1
+                no = converter(linha)
+                if no and no.get("_semReferencia"):
+                    # Sem "preço de" no feed: anota o preço e só vira oferta se caiu frente ao nosso histórico.
+                    acompanhados += 1
+                    chave = f"awin-{no['shopId']}-{no['itemId']}"
+                    tipico = monitor.registrar(precos, chave, no["productName"], no["priceMin"])
+                    desconto = monitor.em_queda(no["priceMin"], tipico)
+                    if not desconto or desconto > DESCONTO_MAXIMO_AWIN:  # queda absurda: "preço típico" errado na loja
+                        continue
+                    em_queda += 1
+                    no["_precoAntigo"] = round(tipico, 2)
+                    no["priceDiscountRate"] = desconto
+                if no:
+                    por_marca.setdefault(no["shopName"], []).append(no)
+                else:
+                    marca = html.unescape(linha.get("merchant_name") or "?").replace(" BR", "").strip()
+                    chave = (marca, _motivo(linha))
+                    motivos[chave] = motivos.get(chave, 0) + 1
+            total += lidas
+            print(f"Awin: {marca_feed} com {lidas} produtos no feed.")
+        except Exception as erro:  # uma marca com problema não derruba as outras
+            print(f"Aviso Awin: falha no feed de {marca_feed}: {erro}")
     for (marca, motivo), qtd in sorted(motivos.items(), key=lambda x: -x[1])[:12]:
         print(f"Awin diagnóstico: {marca} - {qtd} fora por {motivo}")
     for marca, lista in por_marca.items():
@@ -254,7 +260,7 @@ def coletar():
     monitor.salvar(precos)
     if acompanhados:
         print(f"Awin acompanhamento: {acompanhados} produtos sem 'preço de' com preço anotado, {em_queda} em queda real hoje.")
-    print(f"Awin: {len(linhas)} produtos lidos, {len(nos)} no nicho e com desconto, de {len(por_marca)} marcas.")
+    print(f"Awin: {total} produtos lidos, {len(nos)} no nicho e com desconto, de {len(por_marca)} marcas.")
     return nos
 
 
